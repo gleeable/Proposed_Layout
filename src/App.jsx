@@ -5,7 +5,7 @@ import { FloorPanel } from './components/floorPanel/FloorPanel';
 import { Palette } from './components/canvas/Palette';
 import { CanvasToolbar } from './components/canvas/CanvasToolbar';
 import { DesignCanvas } from './components/canvas/DesignCanvas';
-import { ProductTabPlaceholder } from './components/product/ProductTabPlaceholder';
+import { ProductPanel } from './components/product/ProductPanel';
 import { useAppStore } from './store/useAppStore';
 
 function DesignTab() {
@@ -28,7 +28,7 @@ function DesignTab() {
 }
 
 function App() {
-  return <AppShell designContent={<DesignTab />} productContent={<ProductTabPlaceholder />} />;
+  return <AppShell designContent={<DesignTab />} productContent={<ProductPanel />} />;
 }
 
 export default App;

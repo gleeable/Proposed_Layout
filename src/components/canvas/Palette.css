@@ -54,3 +54,16 @@
 .palette__item--generic {
   width: 100%;
 }
+
+.palette__thumb {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.palette__empty {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0 0 8px;
+}

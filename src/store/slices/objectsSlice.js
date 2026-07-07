@@ -5,6 +5,7 @@ const PLACEMENT_STEP_M = 1;
 const PLACEMENT_GRID_COLS = 3;
 const DUPLICATE_OFFSET_M = 0.5;
 const DEFAULT_VERTICAL_HEIGHT_MM = 800;
+const DEFAULT_PRODUCT_SIZE_M = 1;
 
 function placementOffset(existingCountOnFloor) {
   const index = existingCountOnFloor % (PLACEMENT_GRID_COLS * PLACEMENT_GRID_COLS);
@@ -78,6 +79,39 @@ export const createObjectsSlice = (set, get) => ({
       y: footprint.depthM / 2 + dy,
       width: 2,
       height: 2,
+      verticalHeightMm: DEFAULT_VERTICAL_HEIGHT_MM,
+      memo: '',
+      rotation: 0,
+      flipX: false,
+      flipY: false,
+      locked: false,
+      groupId: null,
+    };
+    set({ objects: [...objects, newObject] });
+    return newObject.id;
+  },
+
+  addCatalogProduct: (catalogItemId, floorId) => {
+    const { building, objects, catalogItems } = get();
+    const catalogItem = catalogItems.find((item) => item.id === catalogItemId);
+    if (!catalogItem) return null;
+
+    const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
+    const existingCount = objects.filter((o) => o.floorId === floorId).length;
+    const { dx, dy } = placementOffset(existingCount);
+
+    const newObject = {
+      id: createId(),
+      floorId,
+      kind: 'product',
+      category: 'custom',
+      label: catalogItem.label,
+      fill: '#93C5FD',
+      imageDataUrl: catalogItem.imageDataUrl,
+      x: footprint.widthM / 2 + dx,
+      y: footprint.depthM / 2 + dy,
+      width: DEFAULT_PRODUCT_SIZE_M,
+      height: DEFAULT_PRODUCT_SIZE_M,
       verticalHeightMm: DEFAULT_VERTICAL_HEIGHT_MM,
       memo: '',
       rotation: 0,

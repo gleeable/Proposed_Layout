@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { Group, Rect, Text } from 'react-konva';
+import { Group, Rect, Text, Image as KonvaImage } from 'react-konva';
+import useImage from 'use-image';
 import { metersToStagePx, stagePxToMeters } from './canvasGeometry';
 
 export function PlacedObjectShape({
@@ -14,7 +15,8 @@ export function PlacedObjectShape({
   onDragEnd,
   onOpenDetails,
 }) {
-  const { id, x, y, width, height, rotation, flipX, flipY, fill, label } = object;
+  const { id, x, y, width, height, rotation, flipX, flipY, fill, label, imageDataUrl } = object;
+  const [image] = useImage(imageDataUrl || '');
 
   // Must stay referentially stable across renders — a fresh closure here makes React
   // detach/reattach the ref every render, and registerNodeRef's setState would loop forever.
@@ -59,16 +61,28 @@ export function PlacedObjectShape({
       onDragEnd={handleDragEnd}
     >
       <Group scaleX={flipScaleX} scaleY={flipScaleY}>
-        <Rect
-          x={-pxW / 2}
-          y={-pxH / 2}
-          width={pxW}
-          height={pxH}
-          fill={fill}
-          stroke={isSelected ? '#4338ca' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          cornerRadius={3}
-        />
+        {imageDataUrl && image ? (
+          <KonvaImage
+            image={image}
+            x={-pxW / 2}
+            y={-pxH / 2}
+            width={pxW}
+            height={pxH}
+            stroke={isSelected ? '#4338ca' : '#9ca3af'}
+            strokeWidth={isSelected ? 2 : 1}
+          />
+        ) : (
+          <Rect
+            x={-pxW / 2}
+            y={-pxH / 2}
+            width={pxW}
+            height={pxH}
+            fill={fill}
+            stroke={isSelected ? '#4338ca' : '#9ca3af'}
+            strokeWidth={isSelected ? 2 : 1}
+            cornerRadius={3}
+          />
+        )}
         <Group scaleX={flipScaleX} scaleY={flipScaleY}>
           <Text
             text={label}

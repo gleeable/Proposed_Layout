@@ -1,9 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import { create } from 'zustand';
 import { createObjectsSlice } from './objectsSlice';
+import { createCatalogSlice } from './catalogSlice';
 
 function makeStore() {
   return create((...a) => ({ ...createObjectsSlice(...a) }));
+}
+
+function makeStoreWithCatalog() {
+  return create((...a) => ({ ...createObjectsSlice(...a), ...createCatalogSlice(...a) }));
 }
 
 describe('objectsSlice', () => {
@@ -81,5 +86,21 @@ describe('objectsSlice', () => {
     expect(updated.rotation).toBe(90);
     expect(updated.label).toBe('카페 테이블');
     expect(updated.memo).toBe('창가 쪽 배치');
+  });
+
+  test('addCatalogProduct copies label/imageDataUrl from the catalog item onto a new placed object', () => {
+    const store = makeStoreWithCatalog();
+    const catalogId = store.getState().addPhotoProduct({
+      label: '카페 테이블',
+      imageDataUrl: 'data:image/png;base64,abc',
+    });
+
+    const objectId = store.getState().addCatalogProduct(catalogId, 'floor-1');
+
+    const placed = store.getState().objects.find((o) => o.id === objectId);
+    expect(placed.floorId).toBe('floor-1');
+    expect(placed.kind).toBe('product');
+    expect(placed.label).toBe('카페 테이블');
+    expect(placed.imageDataUrl).toBe('data:image/png;base64,abc');
   });
 });

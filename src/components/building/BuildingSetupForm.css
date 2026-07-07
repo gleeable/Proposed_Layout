@@ -59,3 +59,34 @@
 .building-setup button[type='submit']:hover {
   background: #3730a3;
 }
+
+.building-setup__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.building-setup__section h2 {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.building-setup input[type='file'] {
+  padding: 4px 0;
+  border: none;
+  font-size: 12px;
+}
+
+.building-setup__note {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.5;
+  margin: 0;
+}

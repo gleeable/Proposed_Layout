@@ -28,7 +28,15 @@ export function deriveFootprintDims(footprintArea) {
   };
 }
 
-export function buildBuilding({ siteAreaM2, bcrPercent, farPercent, heightM, floorCountOverride }) {
+export function buildBuilding({
+  siteAreaM2,
+  bcrPercent,
+  farPercent,
+  heightM,
+  floorCountOverride,
+  sitePlanFileName,
+  address,
+}) {
   const footprintArea = deriveFootprintArea(siteAreaM2, bcrPercent);
   const totalFloorArea = deriveTotalFloorArea(siteAreaM2, farPercent);
   const floorCount = floorCountOverride && floorCountOverride > 0
@@ -43,5 +51,7 @@ export function buildBuilding({ siteAreaM2, bcrPercent, farPercent, heightM, flo
     heightM: heightM || null,
     floorCount,
     footprint: deriveFootprintDims(footprintArea),
+    sitePlanFileName: sitePlanFileName || null,
+    address: address || null,
   };
 }

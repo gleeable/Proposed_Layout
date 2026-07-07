@@ -4,6 +4,7 @@ import { createBuildingSlice } from './slices/buildingSlice';
 import { createFloorsSlice } from './slices/floorsSlice';
 import { createObjectsSlice } from './slices/objectsSlice';
 import { createUiSlice } from './slices/uiSlice';
+import { createCatalogSlice } from './slices/catalogSlice';
 
 export const useAppStore = create(
   persist(
@@ -12,6 +13,7 @@ export const useAppStore = create(
       ...createFloorsSlice(...args),
       ...createObjectsSlice(...args),
       ...createUiSlice(...args),
+      ...createCatalogSlice(...args),
     }),
     {
       name: 'space-layout-app',
@@ -22,6 +24,7 @@ export const useAppStore = create(
         objects: state.objects,
         activeFloorId: state.activeFloorId,
         activeTab: state.activeTab,
+        catalogItems: state.catalogItems,
       }),
     }
   )
