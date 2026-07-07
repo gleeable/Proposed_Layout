@@ -25,3 +25,11 @@ export function metersToStagePx(valueM, scale) {
 export function stagePxToMeters(valuePx, scale) {
   return valuePx / scale;
 }
+
+export function metersToMm(valueM) {
+  return valueM * 1000;
+}
+
+export function mmToMeters(valueMm) {
+  return valueMm / 1000;
+}

@@ -6,6 +6,7 @@ import { FootprintOutline } from './FootprintOutline';
 import { PlacedObjectShape } from './PlacedObjectShape';
 import { SelectionTransformer } from './SelectionTransformer';
 import { GroupDragProxy } from './GroupDragProxy';
+import { ObjectDetailModal } from './ObjectDetailModal';
 import './DesignCanvas.css';
 
 export function DesignCanvas() {
@@ -13,6 +14,7 @@ export function DesignCanvas() {
   const nodesMapRef = useRef(new Map());
   const [, bumpNodeVersion] = useState(0);
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
+  const [detailObjectId, setDetailObjectId] = useState(null);
 
   const building = useAppStore((s) => s.building);
   const activeFloorId = useAppStore((s) => s.activeFloorId);
@@ -125,6 +127,7 @@ export function DesignCanvas() {
                 registerNodeRef={registerNodeRef}
                 onSelect={(id, additive) => selectObject(id, { additive })}
                 onDragEnd={(id, xM, yM) => updateObjectPosition(id, xM, yM)}
+                onOpenDetails={setDetailObjectId}
               />
             ))}
             <SelectionTransformer
@@ -143,6 +146,9 @@ export function DesignCanvas() {
             />
           </Layer>
         </Stage>
+      )}
+      {detailObjectId && (
+        <ObjectDetailModal objectId={detailObjectId} onClose={() => setDetailObjectId(null)} />
       )}
     </div>
   );

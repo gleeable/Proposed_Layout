@@ -12,6 +12,7 @@ export function PlacedObjectShape({
   registerNodeRef,
   onSelect,
   onDragEnd,
+  onOpenDetails,
 }) {
   const { id, x, y, width, height, rotation, flipX, flipY, fill, label } = object;
 
@@ -32,6 +33,11 @@ export function PlacedObjectShape({
     onSelect(id, additive);
   }
 
+  function handleOpenDetails(evt) {
+    evt.cancelBubble = true;
+    onOpenDetails(id);
+  }
+
   function handleDragEnd(evt) {
     const node = evt.target;
     const xMeters = stagePxToMeters(node.x() - offsetX, scale);
@@ -48,6 +54,8 @@ export function PlacedObjectShape({
       draggable={draggable}
       onClick={handleSelect}
       onTap={handleSelect}
+      onDblClick={handleOpenDetails}
+      onDblTap={handleOpenDetails}
       onDragEnd={handleDragEnd}
     >
       <Group scaleX={flipScaleX} scaleY={flipScaleY}>

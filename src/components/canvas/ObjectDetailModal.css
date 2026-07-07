@@ -1,0 +1,79 @@
+.object-detail-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.object-detail-modal {
+  width: 320px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.object-detail-modal h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.object-detail-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.object-detail-modal input,
+.object-detail-modal textarea {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.object-detail-modal__row {
+  display: flex;
+  gap: 12px;
+}
+
+.object-detail-modal__row label {
+  flex: 1;
+}
+
+.object-detail-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.object-detail-modal__actions button {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #4338ca;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.object-detail-modal__actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.object-detail-modal__cancel {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+}

@@ -4,6 +4,7 @@ import { getFacilityTemplate } from '../../domain/facilityCatalog';
 const PLACEMENT_STEP_M = 1;
 const PLACEMENT_GRID_COLS = 3;
 const DUPLICATE_OFFSET_M = 0.5;
+const DEFAULT_VERTICAL_HEIGHT_MM = 800;
 
 function placementOffset(existingCountOnFloor) {
   const index = existingCountOnFloor % (PLACEMENT_GRID_COLS * PLACEMENT_GRID_COLS);
@@ -48,6 +49,8 @@ export const createObjectsSlice = (set, get) => ({
       y: footprint.depthM / 2 + dy,
       width: template.widthM,
       height: template.depthM,
+      verticalHeightMm: DEFAULT_VERTICAL_HEIGHT_MM,
+      memo: '',
       rotation: 0,
       flipX: false,
       flipY: false,
@@ -75,6 +78,8 @@ export const createObjectsSlice = (set, get) => ({
       y: footprint.depthM / 2 + dy,
       width: 2,
       height: 2,
+      verticalHeightMm: DEFAULT_VERTICAL_HEIGHT_MM,
+      memo: '',
       rotation: 0,
       flipX: false,
       flipY: false,
@@ -88,6 +93,12 @@ export const createObjectsSlice = (set, get) => ({
   updateObjectTransform: (id, transform) => {
     set({
       objects: get().objects.map((o) => (o.id === id ? { ...o, ...transform } : o)),
+    });
+  },
+
+  updateObjectDetails: (id, patch) => {
+    set({
+      objects: get().objects.map((o) => (o.id === id ? { ...o, ...patch } : o)),
     });
   },
 

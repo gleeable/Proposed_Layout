@@ -60,4 +60,26 @@ describe('objectsSlice', () => {
     expect(remaining).toHaveLength(1);
     expect(remaining[0].groupId).toBeNull();
   });
+
+  test('updateObjectDetails merges width/height/verticalHeightMm/label/memo', () => {
+    const store = makeStore();
+    const id = store.getState().addGeneric('floor-1');
+
+    store.getState().updateObjectDetails(id, {
+      width: 1.2,
+      height: 0.7,
+      verticalHeightMm: 750,
+      rotation: 90,
+      label: '카페 테이블',
+      memo: '창가 쪽 배치',
+    });
+
+    const updated = store.getState().objects.find((o) => o.id === id);
+    expect(updated.width).toBe(1.2);
+    expect(updated.height).toBe(0.7);
+    expect(updated.verticalHeightMm).toBe(750);
+    expect(updated.rotation).toBe(90);
+    expect(updated.label).toBe('카페 테이블');
+    expect(updated.memo).toBe('창가 쪽 배치');
+  });
 });
