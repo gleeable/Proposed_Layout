@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { removeImageBackground } from '../../services/backgroundRemoval';
+import { generateProductImage } from '../../services/imageGeneration';
 import './ProductPanel.css';
 
 function defaultLabelFromFileName(fileName) {
@@ -17,6 +18,8 @@ export function ProductPanel() {
   const [pendingPhoto, setPendingPhoto] = useState(null);
   const [progressText, setProgressText] = useState('');
   const [generatedName, setGeneratedName] = useState('');
+  const [generateStatus, setGenerateStatus] = useState('idle');
+  const [generateError, setGenerateError] = useState('');
 
   function handleFile(file) {
     if (!file || !file.type.startsWith('image/')) return;
@@ -70,10 +73,24 @@ export function ProductPanel() {
     setProgressText('');
   }
 
-  function handleGenerate() {
-    if (!generatedName.trim()) return;
-    addGeneratedProduct({ label: generatedName.trim() });
-    setGeneratedName('');
+  async function handleGenerate() {
+    const label = generatedName.trim();
+    if (!label) return;
+
+    setGenerateStatus('generating');
+    setGenerateError('');
+    try {
+      const rawImageDataUrl = await generateProductImage(label);
+      const processedDataUrl = await removeImageBackground(rawImageDataUrl);
+      addGeneratedProduct({ label, imageDataUrl: processedDataUrl });
+      setGeneratedName('');
+      setGenerateStatus('idle');
+    } catch (err) {
+      addGeneratedProduct({ label });
+      setGeneratedName('');
+      setGenerateStatus('error');
+      setGenerateError(`이미지 생성 실패로 기본 오브젝트로 대체했습니다: ${err.message}`);
+    }
   }
 
   return (
@@ -133,12 +150,14 @@ export function ProductPanel() {
             value={generatedName}
             onChange={(e) => setGeneratedName(e.target.value)}
             placeholder="예: 테이블, 의자, 리셉션 데스크"
+            disabled={generateStatus === 'generating'}
           />
-          <button type="button" onClick={handleGenerate}>생성</button>
+          <button type="button" disabled={generateStatus === 'generating'} onClick={handleGenerate}>
+            {generateStatus === 'generating' ? '생성 중...' : '생성'}
+          </button>
         </div>
-        <p className="product-panel__caption">
-          지금은 이름표가 붙은 기본 오브젝트가 생성됩니다. 실제 AI 이미지 생성은 추후 지원됩니다.
-        </p>
+        <p className="product-panel__caption">AI가 이름에 맞는 제품 일러스트를 생성합니다 (수 초 소요).</p>
+        {generateStatus === 'error' && <p className="product-panel__error">{generateError}</p>}
       </section>
 
       <section className="product-panel__section">
