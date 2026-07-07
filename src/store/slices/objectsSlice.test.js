@@ -1,0 +1,63 @@
+import { describe, expect, test } from 'vitest';
+import { create } from 'zustand';
+import { createObjectsSlice } from './objectsSlice';
+
+function makeStore() {
+  return create((...a) => ({ ...createObjectsSlice(...a) }));
+}
+
+describe('objectsSlice', () => {
+  test('duplicateSelection clones with a new id, offset position, same floor', () => {
+    const store = makeStore();
+    const id = store.getState().addGeneric('floor-1');
+    const original = store.getState().objects.find((o) => o.id === id);
+
+    const [dupId] = store.getState().duplicateSelection([id]);
+    const dup = store.getState().objects.find((o) => o.id === dupId);
+
+    expect(dupId).not.toBe(id);
+    expect(dup.floorId).toBe('floor-1');
+    expect(dup.x).not.toBe(original.x);
+    expect(dup.y).not.toBe(original.y);
+  });
+
+  test('moveObjectsToFloor updates floorId', () => {
+    const store = makeStore();
+    const id = store.getState().addGeneric('floor-1');
+
+    store.getState().moveObjectsToFloor([id], 'floor-2');
+
+    expect(store.getState().objects.find((o) => o.id === id).floorId).toBe('floor-2');
+  });
+
+  test('groupObjects assigns a shared groupId, ungroupObjects clears it', () => {
+    const store = makeStore();
+    const id1 = store.getState().addGeneric('floor-1');
+    const id2 = store.getState().addGeneric('floor-1');
+
+    store.getState().groupObjects([id1, id2]);
+    const [o1, o2] = store.getState().objects;
+    expect(o1.groupId).toBeTruthy();
+    expect(o1.groupId).toBe(o2.groupId);
+
+    store.getState().ungroupObjects([id1]);
+    store.getState().objects.forEach((o) => expect(o.groupId).toBeNull());
+  });
+
+  test('removing a group down to a single member clears that member groupId (no orphan group)', () => {
+    const store = makeStore();
+    const id1 = store.getState().addGeneric('floor-1');
+    const id2 = store.getState().addGeneric('floor-1');
+    const id3 = store.getState().addGeneric('floor-1');
+    store.getState().groupObjects([id1, id2, id3]);
+
+    store.getState().removeObjects([id3]);
+    let remaining = store.getState().objects;
+    expect(remaining.every((o) => o.groupId)).toBe(true);
+
+    store.getState().removeObjects([id2]);
+    remaining = store.getState().objects;
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].groupId).toBeNull();
+  });
+});

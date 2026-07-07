@@ -1,0 +1,22 @@
+.product-tab-placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.product-tab-placeholder h2 {
+  color: #111827;
+  margin: 0;
+}
+
+.product-tab-placeholder p {
+  max-width: 420px;
+  font-size: 14px;
+  line-height: 1.6;
+}

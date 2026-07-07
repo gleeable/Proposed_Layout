@@ -1,0 +1,35 @@
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.canvas-toolbar--empty {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.canvas-toolbar button,
+.canvas-toolbar select {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.canvas-toolbar button:disabled,
+.canvas-toolbar select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.canvas-toolbar button:hover:not(:disabled) {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}

@@ -1,29 +1,34 @@
 import './App.css';
+import { AppShell } from './components/layout/AppShell';
+import { BuildingSetupForm } from './components/building/BuildingSetupForm';
+import { FloorPanel } from './components/floorPanel/FloorPanel';
+import { Palette } from './components/canvas/Palette';
+import { CanvasToolbar } from './components/canvas/CanvasToolbar';
+import { DesignCanvas } from './components/canvas/DesignCanvas';
+import { ProductTabPlaceholder } from './components/product/ProductTabPlaceholder';
+import { useAppStore } from './store/useAppStore';
 
-function App() {
+function DesignTab() {
+  const building = useAppStore((s) => s.building);
+
+  if (!building) {
+    return <BuildingSetupForm />;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src="Octocat.png" className="App-logo" alt="logo" />
-        <p>
-          GitHub Codespaces <span className="heart">♥️</span> React
-        </p>
-        <p className="small">
-          Edit <code>src/App.jsx</code> and save to reload.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </p>
-      </header>
+    <div className="design-layout">
+      <Palette />
+      <div className="design-layout__main">
+        <CanvasToolbar />
+        <DesignCanvas />
+      </div>
+      <FloorPanel />
     </div>
   );
+}
+
+function App() {
+  return <AppShell designContent={<DesignTab />} productContent={<ProductTabPlaceholder />} />;
 }
 
 export default App;
