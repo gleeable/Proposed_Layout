@@ -10,20 +10,15 @@ function normalizeWorkerUrl(workerUrl) {
   return workerUrl.replace(/\/$/, '');
 }
 
-async function generateProductImageViaWorker(productName) {
-  const response = await fetch(`${normalizeWorkerUrl(CLOUDFLARE_WORKER_URL)}/generate-product-image`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      productName,
-      prompt: buildPrompt(productName),
-    }),
-  });
+function isPlaceholderWorkerUrl(workerUrl) {
+  return workerUrl.includes('your-worker') || workerUrl.includes('your-subdomain');
+}
 
+async function parseImageGenerationResponse(response, fallbackMessage) {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const message = body?.error?.message || body?.error || `Cloudflare Worker 요청 실패 (HTTP ${response.status})`;
+    const message = body?.error?.message || body?.error || fallbackMessage;
     throw new Error(message);
   }
 
@@ -35,24 +30,68 @@ async function generateProductImageViaWorker(productName) {
     return `data:${body.mimeType};base64,${body.data}`;
   }
 
-  throw new Error('Cloudflare Worker 응답에 이미지 데이터가 없습니다.');
+  throw new Error('응답에 이미지 데이터가 없습니다.');
+}
+
+async function generateProductImageViaWorker(productName) {
+  let response;
+
+  try {
+    response = await fetch(`${normalizeWorkerUrl(CLOUDFLARE_WORKER_URL)}/generate-product-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName,
+        prompt: buildPrompt(productName),
+      }),
+    });
+  } catch (error) {
+    throw new Error(`Cloudflare Worker 연결 실패: ${error.message}`);
+  }
+
+  return parseImageGenerationResponse(response, `Cloudflare Worker 요청 실패 (HTTP ${response.status})`);
+}
+
+async function generateProductImageViaLocalApi(productName) {
+  let response;
+
+  try {
+    response = await fetch('/api/generate-product-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName,
+        prompt: buildPrompt(productName),
+      }),
+    });
+  } catch (error) {
+    throw new Error(`로컬 이미지 생성 API 연결 실패: ${error.message}`);
+  }
+
+  return parseImageGenerationResponse(response, `로컬 이미지 생성 요청 실패 (HTTP ${response.status})`);
 }
 
 async function generateProductImageDirect(productName) {
   if (!API_KEY) {
-    throw new Error('VITE_CLOUDFLARE_WORKER_URL 또는 VITE_GOOGLE_AI_STUDIO_APIKEY가 설정되어 있지 않습니다.');
+    throw new Error('브라우저 직접 호출용 Google API 키가 설정되어 있지 않습니다.');
   }
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: buildPrompt(productName) }] }],
-      }),
-    }
-  );
+  let response;
+
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: buildPrompt(productName) }] }],
+        }),
+      }
+    );
+  } catch (error) {
+    throw new Error(`Google API 직접 연결 실패: ${error.message}`);
+  }
 
   const body = await response.json();
 
@@ -72,9 +111,31 @@ async function generateProductImageDirect(productName) {
 }
 
 export async function generateProductImage(productName) {
-  if (CLOUDFLARE_WORKER_URL) {
-    return generateProductImageViaWorker(productName);
+  let lastError = null;
+
+  try {
+    return generateProductImageViaLocalApi(productName);
+  } catch (error) {
+    lastError = error;
+    console.warn('Same-origin image generation API failed. Falling back to Cloudflare Worker or direct Google API request.', error);
   }
 
-  return generateProductImageDirect(productName);
+  if (CLOUDFLARE_WORKER_URL && !isPlaceholderWorkerUrl(CLOUDFLARE_WORKER_URL)) {
+    try {
+      return await generateProductImageViaWorker(productName);
+    } catch (error) {
+      lastError = error;
+      console.warn('Cloudflare Worker image generation failed. Falling back to direct Google API request.', error);
+    }
+  }
+
+  if (API_KEY) {
+    return generateProductImageDirect(productName);
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw new Error('이미지 생성 API를 사용할 수 없습니다. Cloudflare Pages Function과 GOOGLE_AI_STUDIO_APIKEY 설정을 확인해주세요.');
 }

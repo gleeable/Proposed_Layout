@@ -80,9 +80,8 @@ export function ProductPanel() {
     setGenerateStatus('generating');
     setGenerateError('');
     try {
-      const rawImageDataUrl = await generateProductImage(label);
-      const processedDataUrl = await removeImageBackground(rawImageDataUrl);
-      addGeneratedProduct({ label, imageDataUrl: processedDataUrl });
+      const imageDataUrl = await generateProductImage(label);
+      addGeneratedProduct({ label, imageDataUrl });
       setGeneratedName('');
       setGenerateStatus('idle');
     } catch (err) {
