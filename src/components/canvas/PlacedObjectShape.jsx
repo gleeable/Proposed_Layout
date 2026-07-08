@@ -15,8 +15,9 @@ export function PlacedObjectShape({
   onDragEnd,
   onOpenDetails,
 }) {
-  const { id, x, y, width, height, rotation, flipX, flipY, fill, label, imageDataUrl } = object;
+  const { id, x, y, width, height, rotation, flipX, flipY, fill, label, imageDataUrl, kind } = object;
   const [image] = useImage(imageDataUrl || '');
+  const showLabel = kind !== 'product';
 
   // Must stay referentially stable across renders — a fresh closure here makes React
   // detach/reattach the ref every render, and registerNodeRef's setState would loop forever.
@@ -83,20 +84,22 @@ export function PlacedObjectShape({
             cornerRadius={3}
           />
         )}
-        <Group scaleX={flipScaleX} scaleY={flipScaleY}>
-          <Text
-            text={label}
-            x={-pxW / 2}
-            y={-pxH / 2}
-            width={pxW}
-            height={pxH}
-            align="center"
-            verticalAlign="middle"
-            fontSize={11}
-            fill="#111827"
-            listening={false}
-          />
-        </Group>
+        {showLabel && (
+          <Group scaleX={flipScaleX} scaleY={flipScaleY}>
+            <Text
+              text={label}
+              x={-pxW / 2}
+              y={-pxH / 2}
+              width={pxW}
+              height={pxH}
+              align="center"
+              verticalAlign="middle"
+              fontSize={11}
+              fill="#111827"
+              listening={false}
+            />
+          </Group>
+        )}
       </Group>
     </Group>
   );
