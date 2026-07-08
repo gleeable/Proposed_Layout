@@ -1,8 +1,11 @@
 export const createUiSlice = (set, get) => ({
   activeTab: 'design',
   selectedIds: [],
+  canvasViewMode: '2d',
 
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  setCanvasViewMode: (mode) => set({ canvasViewMode: mode }),
 
   clearSelection: () => set({ selectedIds: [] }),
 

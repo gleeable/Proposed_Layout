@@ -5,6 +5,8 @@
   "type": "module",
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
@@ -12,6 +14,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-konva": "^18.2.16",
+    "three": "^0.185.1",
     "use-image": "^1.1.4",
     "web-vitals": "^3.1.0",
     "zustand": "^5.0.14"

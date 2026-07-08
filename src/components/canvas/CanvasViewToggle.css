@@ -1,0 +1,24 @@
+.canvas-view-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.canvas-view-toggle__btn {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.canvas-view-toggle__btn.is-active {
+  background: #4338ca;
+  border-color: #4338ca;
+  color: #ffffff;
+}

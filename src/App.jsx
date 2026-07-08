@@ -4,12 +4,15 @@ import { BuildingSetupForm } from './components/building/BuildingSetupForm';
 import { FloorPanel } from './components/floorPanel/FloorPanel';
 import { Palette } from './components/canvas/Palette';
 import { CanvasToolbar } from './components/canvas/CanvasToolbar';
+import { CanvasViewToggle } from './components/canvas/CanvasViewToggle';
 import { DesignCanvas } from './components/canvas/DesignCanvas';
+import { Design3DView } from './components/canvas/Design3DView';
 import { ProductPanel } from './components/product/ProductPanel';
 import { useAppStore } from './store/useAppStore';
 
 function DesignTab() {
   const building = useAppStore((s) => s.building);
+  const canvasViewMode = useAppStore((s) => s.canvasViewMode);
 
   if (!building) {
     return <BuildingSetupForm />;
@@ -19,8 +22,9 @@ function DesignTab() {
     <div className="design-layout">
       <Palette />
       <div className="design-layout__main">
+        <CanvasViewToggle />
         <CanvasToolbar />
-        <DesignCanvas />
+        {canvasViewMode === '3d' ? <Design3DView /> : <DesignCanvas />}
       </div>
       <FloorPanel />
     </div>
