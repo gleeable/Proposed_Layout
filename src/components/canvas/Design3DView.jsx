@@ -1,7 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
-import { Html, OrbitControls, PerspectiveCamera, useTexture } from '@react-three/drei';
+import { Billboard, Html, OrbitControls, PerspectiveCamera, useTexture } from '@react-three/drei';
 import { useAppStore } from '../../store/useAppStore';
 import './Design3DView.css';
 
@@ -43,16 +43,12 @@ function ProductStandee({ width, depth, height, imageUrl }) {
   const texture = useTexture(imageUrl);
   const planeWidth = Math.max(width, depth, 0.3);
   return (
-    <group position={[0, height / 2, 0]}>
+    <Billboard position={[0, height / 2, 0]}>
       <mesh>
         <planeGeometry args={[planeWidth, height]} />
-        <meshStandardMaterial map={texture} transparent alphaTest={0.2} side={THREE.DoubleSide} />
+        <meshStandardMaterial map={texture} transparent alphaTest={0.2} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
-      <mesh rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[planeWidth, height]} />
-        <meshStandardMaterial map={texture} transparent alphaTest={0.2} side={THREE.DoubleSide} />
-      </mesh>
-    </group>
+    </Billboard>
   );
 }
 
