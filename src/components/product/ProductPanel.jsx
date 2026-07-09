@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { removeImageBackground } from '../../services/backgroundRemoval';
 import { generateProductImage } from '../../services/imageGeneration';
+import { generateProduct3DModel } from '../../services/model3d';
 import './ProductPanel.css';
 
 function defaultLabelFromFileName(fileName) {
@@ -98,7 +99,19 @@ export function ProductPanel() {
         // 누끼 실패 시 원본(흰 배경) 이미지라도 사용
       }
 
-      addGeneratedProduct({ label, imageDataUrl });
+      let modelUrl = null;
+      setGenerateProgressText('3D 모델 생성 중...');
+      try {
+        modelUrl = await generateProduct3DModel(imageDataUrl, {
+          onProgress: (progress, status) => {
+            setGenerateProgressText(`3D 모델 생성 중... ${progress}% (${status})`);
+          },
+        });
+      } catch (err3d) {
+        console.warn('3D 모델 생성 실패, 평면 이미지로 대체합니다.', err3d);
+      }
+
+      addGeneratedProduct({ label, imageDataUrl, modelUrl });
       setGeneratedName('');
       setGenerateStatus('idle');
     } catch (err) {
@@ -177,7 +190,7 @@ export function ProductPanel() {
         <p className="product-panel__caption">
           {generateStatus === 'generating' && generateProgressText
             ? generateProgressText
-            : 'AI가 이름에 맞는 제품 일러스트를 생성하고 배경을 자동으로 제거합니다 (수 초 소요).'}
+            : 'AI가 이름에 맞는 제품 이미지를 만들고, 회전 가능한 3D 모델까지 생성합니다 (1~2분 소요).'}
         </p>
         {generateStatus === 'error' && <p className="product-panel__error">{generateError}</p>}
       </section>

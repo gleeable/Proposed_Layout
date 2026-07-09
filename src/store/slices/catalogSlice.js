@@ -15,12 +15,13 @@ export const createCatalogSlice = (set, get) => ({
     return newItem.id;
   },
 
-  addGeneratedProduct: ({ label, imageDataUrl = null }) => {
+  addGeneratedProduct: ({ label, imageDataUrl = null, modelUrl = null }) => {
     const newItem = {
       id: createId(),
       source: 'generated',
       label,
       imageDataUrl,
+      modelUrl,
       createdAt: Date.now(),
     };
     set({ catalogItems: [...get().catalogItems, newItem] });

@@ -1,7 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
-import { Billboard, Html, OrbitControls, PerspectiveCamera, useTexture } from '@react-three/drei';
+import { Billboard, Html, OrbitControls, PerspectiveCamera, useGLTF, useTexture } from '@react-three/drei';
 import { useAppStore } from '../../store/useAppStore';
 import './Design3DView.css';
 
@@ -52,6 +52,26 @@ function ProductStandee({ width, depth, height, imageUrl }) {
   );
 }
 
+function ProductModel3D({ width, depth, height, modelUrl }) {
+  const { scene } = useGLTF(modelUrl);
+  const cloned = useMemo(() => scene.clone(true), [scene]);
+
+  const { scale, baseOffsetY } = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(cloned);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const candidates = [
+      size.x > 0 ? width / size.x : null,
+      size.z > 0 ? depth / size.z : null,
+      size.y > 0 ? height / size.y : null,
+    ].filter((v) => Number.isFinite(v) && v > 0);
+    const s = candidates.length ? Math.min(...candidates) : 1;
+    return { scale: s, baseOffsetY: -box.min.y * s };
+  }, [cloned, width, depth, height]);
+
+  return <primitive object={cloned} scale={scale} position={[0, baseOffsetY, 0]} />;
+}
+
 function PlainBox({ width, depth, height, fill }) {
   return (
     <mesh position={[0, height / 2, 0]}>
@@ -72,7 +92,9 @@ function PlacedObject3D({ object, footprint }) {
 
   return (
     <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
-      {object.imageDataUrl ? (
+      {object.modelUrl ? (
+        <ProductModel3D width={width} depth={depth} height={heightM} modelUrl={object.modelUrl} />
+      ) : object.imageDataUrl ? (
         <ProductStandee width={width} depth={depth} height={heightM} imageUrl={object.imageDataUrl} />
       ) : (
         <PlainBox width={width} depth={depth} height={heightM} fill={object.fill} />
@@ -112,11 +134,11 @@ function Scene({ footprint, floorObjects, floorHeightM }) {
 
       <Walls footprint={footprint} heightM={floorHeightM} />
 
-      <Suspense fallback={null}>
-        {floorObjects.map((object) => (
-          <PlacedObject3D key={object.id} object={object} footprint={footprint} />
-        ))}
-      </Suspense>
+      {floorObjects.map((object) => (
+        <Suspense key={object.id} fallback={null}>
+          <PlacedObject3D object={object} footprint={footprint} />
+        </Suspense>
+      ))}
     </>
   );
 }

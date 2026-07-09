@@ -108,6 +108,7 @@ export const createObjectsSlice = (set, get) => ({
       label: catalogItem.label,
       fill: '#93C5FD',
       imageDataUrl: catalogItem.imageDataUrl,
+      modelUrl: catalogItem.modelUrl || null,
       x: footprint.widthM / 2 + dx,
       y: footprint.depthM / 2 + dy,
       width: DEFAULT_PRODUCT_SIZE_M,
