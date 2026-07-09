@@ -39,18 +39,20 @@ function Walls({ footprint, heightM }) {
   );
 }
 
-function TexturedBox({ width, depth, height, imageUrl, fill }) {
+function ProductStandee({ width, depth, height, imageUrl }) {
   const texture = useTexture(imageUrl);
+  const planeWidth = Math.max(width, depth, 0.3);
   return (
-    <mesh position={[0, height / 2, 0]}>
-      <boxGeometry args={[width, height, depth]} />
-      <meshStandardMaterial attach="material-0" color={fill} />
-      <meshStandardMaterial attach="material-1" color={fill} />
-      <meshStandardMaterial attach="material-2" map={texture} />
-      <meshStandardMaterial attach="material-3" color={fill} />
-      <meshStandardMaterial attach="material-4" color={fill} />
-      <meshStandardMaterial attach="material-5" color={fill} />
-    </mesh>
+    <group position={[0, height / 2, 0]}>
+      <mesh>
+        <planeGeometry args={[planeWidth, height]} />
+        <meshStandardMaterial map={texture} transparent alphaTest={0.2} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[planeWidth, height]} />
+        <meshStandardMaterial map={texture} transparent alphaTest={0.2} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
   );
 }
 
@@ -75,7 +77,7 @@ function PlacedObject3D({ object, footprint }) {
   return (
     <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
       {object.imageDataUrl ? (
-        <TexturedBox width={width} depth={depth} height={heightM} imageUrl={object.imageDataUrl} fill={object.fill} />
+        <ProductStandee width={width} depth={depth} height={heightM} imageUrl={object.imageDataUrl} />
       ) : (
         <PlainBox width={width} depth={depth} height={heightM} fill={object.fill} />
       )}
