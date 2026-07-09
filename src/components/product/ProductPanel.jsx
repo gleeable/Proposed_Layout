@@ -20,6 +20,7 @@ export function ProductPanel() {
   const [generatedName, setGeneratedName] = useState('');
   const [generateStatus, setGenerateStatus] = useState('idle');
   const [generateError, setGenerateError] = useState('');
+  const [generateProgressText, setGenerateProgressText] = useState('');
 
   function handleFile(file) {
     if (!file || !file.type.startsWith('image/')) return;
@@ -79,8 +80,24 @@ export function ProductPanel() {
 
     setGenerateStatus('generating');
     setGenerateError('');
+    setGenerateProgressText('이미지 생성 중...');
     try {
-      const imageDataUrl = await generateProductImage(label);
+      const rawImageDataUrl = await generateProductImage(label);
+
+      let imageDataUrl = rawImageDataUrl;
+      setGenerateProgressText('배경 제거 중...');
+      try {
+        imageDataUrl = await removeImageBackground(rawImageDataUrl, {
+          onProgress: (key, current, total) => {
+            if (total > 0) {
+              setGenerateProgressText(`배경 제거 중... ${Math.round((current / total) * 100)}%`);
+            }
+          },
+        });
+      } catch {
+        // 누끼 실패 시 원본(흰 배경) 이미지라도 사용
+      }
+
       addGeneratedProduct({ label, imageDataUrl });
       setGeneratedName('');
       setGenerateStatus('idle');
@@ -89,6 +106,8 @@ export function ProductPanel() {
       setGeneratedName('');
       setGenerateStatus('error');
       setGenerateError(`이미지 생성 실패로 기본 오브젝트로 대체했습니다: ${err.message}`);
+    } finally {
+      setGenerateProgressText('');
     }
   }
 
@@ -155,7 +174,11 @@ export function ProductPanel() {
             {generateStatus === 'generating' ? '생성 중...' : '생성'}
           </button>
         </div>
-        <p className="product-panel__caption">AI가 이름에 맞는 제품 일러스트를 생성합니다 (수 초 소요).</p>
+        <p className="product-panel__caption">
+          {generateStatus === 'generating' && generateProgressText
+            ? generateProgressText
+            : 'AI가 이름에 맞는 제품 일러스트를 생성하고 배경을 자동으로 제거합니다 (수 초 소요).'}
+        </p>
         {generateStatus === 'error' && <p className="product-panel__error">{generateError}</p>}
       </section>
 
