@@ -17,6 +17,7 @@ export function PlacedObjectShape({
   onDragStart,
   onDragEnd,
   onOpenDetails,
+  onContextMenu,
 }) {
   const { id, x, y, width, height, rotation, flipX, flipY, fill, label, imageDataUrl, kind, category } = object;
   const [image] = useImage(imageDataUrl || '');
@@ -38,12 +39,23 @@ export function PlacedObjectShape({
     // While placing a new product, clicks should bubble up to the stage and
     // confirm the placement instead of selecting whatever is underneath.
     if (placementModeActive) return;
+    // Right-click is handled by handleContextMenu instead — falling through
+    // here would collapse an existing multi-selection back down to just this
+    // object (non-additive select) before the context menu logic ever runs.
+    if (evt.evt.button === 2) return;
     evt.cancelBubble = true;
     const additive = Boolean(evt.evt.shiftKey || evt.evt.ctrlKey || evt.evt.metaKey);
     onSelect(id, additive);
     if (!additive) {
       onOpenDetails(id);
     }
+  }
+
+  function handleContextMenu(evt) {
+    if (placementModeActive) return;
+    evt.evt.preventDefault();
+    evt.cancelBubble = true;
+    onContextMenu?.(id);
   }
 
   function handleDragStart(evt) {
@@ -66,6 +78,7 @@ export function PlacedObjectShape({
       draggable={draggable && !placementModeActive}
       onClick={handleSelect}
       onTap={handleSelect}
+      onContextMenu={handleContextMenu}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >

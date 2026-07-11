@@ -49,6 +49,8 @@ export function DesignCanvas() {
   const applyDeltaToSelection = useAppStore((s) => s.applyDeltaToSelection);
   const pushHistorySnapshot = useAppStore((s) => s.pushHistorySnapshot);
   const duplicateObjectAt = useAppStore((s) => s.duplicateObjectAt);
+  const duplicateSelectionBy = useAppStore((s) => s.duplicateSelectionBy);
+  const groupObjects = useAppStore((s) => s.groupObjects);
   const placingCatalogItemId = useAppStore((s) => s.placingCatalogItemId);
   const isEditingLayout = useAppStore((s) => s.isEditingLayout);
   const resizeFootprint = useAppStore((s) => s.resizeFootprint);
@@ -107,6 +109,13 @@ export function DesignCanvas() {
         return;
       }
 
+      if (e.key.toLowerCase() === 'v' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const newIds = state.pasteClipboard();
+        if (newIds?.length) state.setSelectedIds(newIds);
+        return;
+      }
+
       if (state.selectedIds.length === 0) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -123,6 +132,9 @@ export function DesignCanvas() {
         } else {
           state.groupObjects(state.selectedIds);
         }
+      } else if (e.key.toLowerCase() === 'c' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        state.copySelection(state.selectedIds);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -193,6 +205,15 @@ export function DesignCanvas() {
     setViewerObjectId(id);
   }
 
+  function handleObjectContextMenu(id) {
+    // Right-clicking a member of an existing multi-selection groups the
+    // whole selection; right-clicking a lone/ungrouped object is a no-op
+    // (native context menu is already suppressed in PlacedObjectShape).
+    if (selectedIds.length >= 2 && selectedIds.includes(id)) {
+      groupObjects(selectedIds);
+    }
+  }
+
   function handleStagePointerMove(e) {
     placement.handleStagePointerMove(e);
     viewport.handleStagePointerMove(e);
@@ -259,6 +280,7 @@ export function DesignCanvas() {
                 onDragStart={copyDrag.handleObjectDragStart}
                 onDragEnd={copyDrag.handleObjectDragEnd}
                 onOpenDetails={setDetailObjectId}
+                onContextMenu={handleObjectContextMenu}
               />
             ))}
             {placement.isPlacing && placement.placingItem && (
@@ -284,6 +306,10 @@ export function DesignCanvas() {
               scale={scale}
               onDeltaMeters={(dx, dy) => applyDeltaToSelection(selectedIds, dx, dy)}
               onDragBegin={pushHistorySnapshot}
+              onDuplicateBy={duplicateSelectionBy}
+              setSelectedIds={setSelectedIds}
+              ctrlRef={ctrlRef}
+              onContextMenu={() => groupObjects(selectedIds)}
             />
           </Layer>
         </Stage>

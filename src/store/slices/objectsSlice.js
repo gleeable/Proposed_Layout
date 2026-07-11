@@ -236,7 +236,10 @@ export const createObjectsSlice = (set, get) => ({
     });
   },
 
-  duplicateSelection: (ids) => {
+  // Shared by duplicateSelection (fixed offset), the Ctrl+drag group-copy, and
+  // clipboard paste (arbitrary offset) — clones the given objects, keeping
+  // their shared groupId only if they were a fully-selected persisted group.
+  duplicateSelectionBy: (ids, dxM, dyM) => {
     const { objects } = get();
     const selected = objects.filter((o) => ids.includes(o.id));
     if (selected.length === 0) return [];
@@ -249,14 +252,47 @@ export const createObjectsSlice = (set, get) => ({
     const duplicates = selected.map((o) => ({
       ...o,
       id: createId(),
-      x: o.x + DUPLICATE_OFFSET_M,
-      y: o.y + DUPLICATE_OFFSET_M,
+      x: o.x + dxM,
+      y: o.y + dyM,
       groupId: newGroupId,
     }));
 
     set({ objects: [...objects, ...duplicates] });
     duplicates.forEach((d) => { if (d.imageDataUrl) saveImageBlob(d.id, d.imageDataUrl); });
     return duplicates.map((d) => d.id);
+  },
+
+  duplicateSelection: (ids) => get().duplicateSelectionBy(ids, DUPLICATE_OFFSET_M, DUPLICATE_OFFSET_M),
+
+  clipboard: [],
+
+  copySelection: (ids) => {
+    const { objects } = get();
+    const selected = objects.filter((o) => ids.includes(o.id));
+    if (selected.length === 0) return;
+    set({ clipboard: selected.map((o) => ({ ...o })) });
+  },
+
+  pasteClipboard: () => {
+    const { clipboard, objects } = get();
+    if (clipboard.length === 0) return [];
+
+    get().pushHistorySnapshot();
+    const groupIds = new Set(clipboard.map((o) => o.groupId).filter(Boolean));
+    const isPersistedGroup = groupIds.size === 1 && clipboard.every((o) => o.groupId);
+    const newGroupId = clipboard.length > 1 && isPersistedGroup ? createId() : null;
+
+    const pasted = clipboard.map((o) => ({
+      ...o,
+      id: createId(),
+      x: o.x + DUPLICATE_OFFSET_M,
+      y: o.y + DUPLICATE_OFFSET_M,
+      groupId: newGroupId,
+    }));
+
+    set({ objects: [...objects, ...pasted], clipboard: pasted.map((p) => ({ ...p })) });
+    pasted.forEach((p) => { if (p.imageDataUrl) saveImageBlob(p.id, p.imageDataUrl); });
+    return pasted.map((p) => p.id);
   },
 
   removeObjects: (ids) => {
