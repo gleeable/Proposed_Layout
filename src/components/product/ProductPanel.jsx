@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { removeImageBackground } from '../../services/backgroundRemoval';
 import { generateProductImage } from '../../services/imageGeneration';
 import { generateProduct3DModel } from '../../services/model3d';
+import { ProductViewerModal } from '../productViewer/ProductViewerModal';
 import './ProductPanel.css';
 
 function defaultLabelFromFileName(fileName) {
@@ -14,6 +15,10 @@ export function ProductPanel() {
   const addPhotoProduct = useAppStore((s) => s.addPhotoProduct);
   const addGeneratedProduct = useAppStore((s) => s.addGeneratedProduct);
   const removeCatalogItem = useAppStore((s) => s.removeCatalogItem);
+  const updateCatalogItemDetails = useAppStore((s) => s.updateCatalogItemDetails);
+
+  const [viewerItemId, setViewerItemId] = useState(null);
+  const viewerItem = catalogItems.find((item) => item.id === viewerItemId) ?? null;
 
   const fileInputRef = useRef(null);
   const [pendingPhoto, setPendingPhoto] = useState(null);
@@ -207,7 +212,10 @@ export function ProductPanel() {
                 <div className="product-panel__swatch">{item.label.slice(0, 1)}</div>
               )}
               <span>{item.label}</span>
-              <button type="button" onClick={() => removeCatalogItem(item.id)}>삭제</button>
+              <div className="product-panel__card-actions">
+                <button type="button" onClick={() => setViewerItemId(item.id)}>3D로 보기</button>
+                <button type="button" onClick={() => removeCatalogItem(item.id)}>삭제</button>
+              </div>
             </div>
           ))}
         </div>
@@ -215,6 +223,14 @@ export function ProductPanel() {
           디자인 탭 왼쪽 팔레트의 "내 제품" 섹션에서 클릭하면 활성 층에 배치됩니다.
         </p>
       </section>
+
+      {viewerItem && (
+        <ProductViewerModal
+          product={viewerItem}
+          onUpdate={(patch) => updateCatalogItemDetails(viewerItem.id, patch)}
+          onClose={() => setViewerItemId(null)}
+        />
+      )}
     </div>
   );
 }

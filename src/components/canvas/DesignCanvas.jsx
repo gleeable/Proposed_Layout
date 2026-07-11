@@ -7,6 +7,7 @@ import { PlacedObjectShape } from './PlacedObjectShape';
 import { SelectionTransformer } from './SelectionTransformer';
 import { GroupDragProxy } from './GroupDragProxy';
 import { ObjectDetailModal } from './ObjectDetailModal';
+import { ProductViewerModal } from '../productViewer/ProductViewerModal';
 import './DesignCanvas.css';
 
 const MIN_ZOOM = 0.3;
@@ -18,6 +19,7 @@ export function DesignCanvas() {
   const [, bumpNodeVersion] = useState(0);
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [detailObjectId, setDetailObjectId] = useState(null);
+  const [viewerObjectId, setViewerObjectId] = useState(null);
   const [zoom, setZoom] = useState(1);
 
   const building = useAppStore((s) => s.building);
@@ -29,6 +31,7 @@ export function DesignCanvas() {
   const updateObjectPosition = useAppStore((s) => s.updateObjectPosition);
   const updateObjectTransform = useAppStore((s) => s.updateObjectTransform);
   const applyDeltaToSelection = useAppStore((s) => s.applyDeltaToSelection);
+  const updateObjectDetails = useAppStore((s) => s.updateObjectDetails);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -123,6 +126,13 @@ export function DesignCanvas() {
     : null;
   const singleSelectedNode = singleSelectedId ? getNode(singleSelectedId) : null;
 
+  const viewerObject = viewerObjectId ? objects.find((o) => o.id === viewerObjectId) ?? null : null;
+
+  function handleOpenViewer(id) {
+    setDetailObjectId(null);
+    setViewerObjectId(id);
+  }
+
   return (
     <div className="design-canvas" ref={containerRef}>
       {stageSize.width > 0 && (
@@ -167,7 +177,18 @@ export function DesignCanvas() {
         </Stage>
       )}
       {detailObjectId && (
-        <ObjectDetailModal objectId={detailObjectId} onClose={() => setDetailObjectId(null)} />
+        <ObjectDetailModal
+          objectId={detailObjectId}
+          onClose={() => setDetailObjectId(null)}
+          onOpenViewer={handleOpenViewer}
+        />
+      )}
+      {viewerObject && (
+        <ProductViewerModal
+          product={viewerObject}
+          onUpdate={(patch) => updateObjectDetails(viewerObject.id, patch)}
+          onClose={() => setViewerObjectId(null)}
+        />
       )}
     </div>
   );

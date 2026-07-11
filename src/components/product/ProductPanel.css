@@ -163,6 +163,11 @@
   word-break: break-word;
 }
 
+.product-panel__card-actions {
+  display: flex;
+  gap: 4px;
+}
+
 .product-panel__card button {
   padding: 4px 8px;
   font-size: 11px;

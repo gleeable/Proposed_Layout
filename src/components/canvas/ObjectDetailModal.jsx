@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { metersToMm, mmToMeters } from './canvasGeometry';
 import './ObjectDetailModal.css';
 
-export function ObjectDetailModal({ objectId, onClose }) {
+export function ObjectDetailModal({ objectId, onClose, onOpenViewer }) {
   const object = useAppStore((s) => s.objects.find((o) => o.id === objectId));
   const updateObjectDetails = useAppStore((s) => s.updateObjectDetails);
 
@@ -118,6 +118,15 @@ export function ObjectDetailModal({ objectId, onClose }) {
         </label>
 
         <div className="object-detail-modal__actions">
+          {onOpenViewer && (
+            <button
+              type="button"
+              className="object-detail-modal__cancel object-detail-modal__viewer-btn"
+              onClick={() => onOpenViewer(objectId)}
+            >
+              3D로 보기
+            </button>
+          )}
           <button type="button" className="object-detail-modal__cancel" onClick={onClose}>
             취소
           </button>
