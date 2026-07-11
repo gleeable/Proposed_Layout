@@ -33,6 +33,7 @@ function buildProductObject(catalogItem, floorId, xM, yM) {
     width: catalogItem.width || DEFAULT_PRODUCT_SIZE_M,
     height: catalogItem.height || DEFAULT_PRODUCT_SIZE_M,
     verticalHeightMm: catalogItem.verticalHeightMm || DEFAULT_VERTICAL_HEIGHT_MM,
+    elevationMm: catalogItem.elevationMm || 0,
     brand: catalogItem.brand || '',
     material: catalogItem.material || '',
     color: catalogItem.color || '',
@@ -64,6 +65,7 @@ export const createObjectsSlice = (set, get) => ({
   addFacility: (category, floorId) => {
     const template = getFacilityTemplate(category);
     if (!template) return;
+    get().pushHistorySnapshot();
     const { building, objects } = get();
     const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
     const existingCount = objects.filter((o) => o.floorId === floorId).length;
@@ -81,6 +83,7 @@ export const createObjectsSlice = (set, get) => ({
       width: template.widthM,
       height: template.depthM,
       verticalHeightMm: DEFAULT_VERTICAL_HEIGHT_MM,
+      elevationMm: 0,
       memo: '',
       rotation: 0,
       flipX: false,
@@ -93,6 +96,7 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   addGeneric: (floorId) => {
+    get().pushHistorySnapshot();
     const { building, objects } = get();
     const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
     const existingCount = objects.filter((o) => o.floorId === floorId).length;
@@ -110,6 +114,7 @@ export const createObjectsSlice = (set, get) => ({
       width: 2,
       height: 2,
       verticalHeightMm: DEFAULT_VERTICAL_HEIGHT_MM,
+      elevationMm: 0,
       memo: '',
       rotation: 0,
       flipX: false,
@@ -126,6 +131,7 @@ export const createObjectsSlice = (set, get) => ({
     const catalogItem = catalogItems.find((item) => item.id === catalogItemId);
     if (!catalogItem) return null;
 
+    get().pushHistorySnapshot();
     const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
     const existingCount = objects.filter((o) => o.floorId === floorId).length;
     const { dx, dy } = placementOffset(existingCount);
@@ -143,6 +149,7 @@ export const createObjectsSlice = (set, get) => ({
     const catalogItem = catalogItems.find((item) => item.id === catalogItemId);
     if (!catalogItem) return null;
 
+    get().pushHistorySnapshot();
     const newObject = buildProductObject(catalogItem, floorId, xM, yM);
     set({ objects: [...objects, newObject] });
     if (newObject.imageDataUrl) saveImageBlob(newObject.id, newObject.imageDataUrl);
@@ -155,6 +162,7 @@ export const createObjectsSlice = (set, get) => ({
     const source = objects.find((o) => o.id === id);
     if (!source) return null;
 
+    get().pushHistorySnapshot();
     const copy = {
       ...source,
       id: createId(),
@@ -169,12 +177,14 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   updateObjectTransform: (id, transform) => {
+    get().pushHistorySnapshot();
     set({
       objects: get().objects.map((o) => (o.id === id ? { ...o, ...transform } : o)),
     });
   },
 
   updateObjectDetails: (id, patch) => {
+    get().pushHistorySnapshot();
     set({
       objects: get().objects.map((o) => (o.id === id ? { ...o, ...patch } : o)),
     });
@@ -182,11 +192,16 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   updateObjectPosition: (id, x, y) => {
+    get().pushHistorySnapshot();
     set({
       objects: get().objects.map((o) => (o.id === id ? { ...o, x, y } : o)),
     });
   },
 
+  // Called every frame during a multi-select group drag — deliberately does
+  // NOT push a history snapshot itself (that would record one undo step per
+  // pointer-move frame). The caller pushes one snapshot up front instead, via
+  // pushHistorySnapshot() at drag start.
   applyDeltaToSelection: (ids, dx, dy) => {
     const idSet = new Set(ids);
     set({
@@ -197,6 +212,7 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   rotateSelectionBy: (ids, degrees) => {
+    get().pushHistorySnapshot();
     const idSet = new Set(ids);
     set({
       objects: get().objects.map((o) => (
@@ -206,6 +222,7 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   flipSelection: (ids, axis) => {
+    get().pushHistorySnapshot();
     const idSet = new Set(ids);
     const key = axis === 'x' ? 'flipX' : 'flipY';
     set({
@@ -220,6 +237,7 @@ export const createObjectsSlice = (set, get) => ({
     const selected = objects.filter((o) => ids.includes(o.id));
     if (selected.length === 0) return [];
 
+    get().pushHistorySnapshot();
     const groupIds = new Set(selected.map((o) => o.groupId).filter(Boolean));
     const isPersistedGroup = groupIds.size === 1 && selected.every((o) => o.groupId);
     const newGroupId = selected.length > 1 && isPersistedGroup ? createId() : null;
@@ -238,6 +256,7 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   removeObjects: (ids) => {
+    get().pushHistorySnapshot();
     const idSet = new Set(ids);
     const remaining = get().objects.filter((o) => !idSet.has(o.id));
     set({ objects: dropOrphanGroups(remaining), selectedIds: [] });
@@ -245,6 +264,7 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   moveObjectsToFloor: (ids, floorId) => {
+    get().pushHistorySnapshot();
     const idSet = new Set(ids);
     set({
       objects: get().objects.map((o) => (
@@ -256,6 +276,7 @@ export const createObjectsSlice = (set, get) => ({
 
   groupObjects: (ids) => {
     if (ids.length < 2) return;
+    get().pushHistorySnapshot();
     const idSet = new Set(ids);
     const groupId = createId();
     set({
@@ -271,6 +292,7 @@ export const createObjectsSlice = (set, get) => ({
       objects.filter((o) => ids.includes(o.id) && o.groupId).map((o) => o.groupId)
     );
     if (groupIdsToClear.size === 0) return;
+    get().pushHistorySnapshot();
     set({
       objects: objects.map((o) => (
         o.groupId && groupIdsToClear.has(o.groupId) ? { ...o, groupId: null } : o

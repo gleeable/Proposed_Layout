@@ -85,13 +85,14 @@ function PlacedObject3D({ object, footprint }) {
   const width = Math.max(0.05, object.width);
   const depth = Math.max(0.05, object.height);
   const heightM = Math.max(0.05, (object.verticalHeightMm || 800) / 1000);
+  const elevationM = Math.max(0, object.elevationMm || 0) / 1000;
   const x = object.x - footprint.widthM / 2;
   const z = object.y - footprint.depthM / 2;
   const rotY = -THREE.MathUtils.degToRad(object.rotation || 0);
   const showLabel = object.kind !== 'product';
 
   return (
-    <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
+    <group position={[x, elevationM, z]} rotation={[0, rotY, 0]}>
       {object.modelUrl ? (
         <ProductModel3D width={width} depth={depth} height={heightM} modelUrl={object.modelUrl} />
       ) : object.imageDataUrl ? (

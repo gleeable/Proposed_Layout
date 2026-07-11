@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Rect } from 'react-konva';
 import { stagePxToMeters } from './canvasGeometry';
 
-export function GroupDragProxy({ selectedIds, getNode, scale, onDeltaMeters }) {
+export function GroupDragProxy({ selectedIds, getNode, scale, onDeltaMeters, onDragBegin }) {
   const lastPos = useRef({ x: 0, y: 0 });
   const [box, setBox] = useState(null);
 
@@ -29,6 +29,9 @@ export function GroupDragProxy({ selectedIds, getNode, scale, onDeltaMeters }) {
   if (!box) return null;
 
   function handleDragStart(e) {
+    // One undo step for the whole gesture — handleDragMove fires on every
+    // pointer-move frame and must not push its own history snapshot each time.
+    onDragBegin?.();
     lastPos.current = { x: e.target.x(), y: e.target.y() };
   }
 

@@ -2,13 +2,18 @@ import { describe, expect, test } from 'vitest';
 import { create } from 'zustand';
 import { createObjectsSlice } from './objectsSlice';
 import { createCatalogSlice } from './catalogSlice';
+import { createHistorySlice } from './historySlice';
 
 function makeStore() {
-  return create((...a) => ({ ...createObjectsSlice(...a) }));
+  return create((...a) => ({ ...createObjectsSlice(...a), ...createHistorySlice(...a) }));
 }
 
 function makeStoreWithCatalog() {
-  return create((...a) => ({ ...createObjectsSlice(...a), ...createCatalogSlice(...a) }));
+  return create((...a) => ({
+    ...createObjectsSlice(...a),
+    ...createCatalogSlice(...a),
+    ...createHistorySlice(...a),
+  }));
 }
 
 describe('objectsSlice', () => {
@@ -102,5 +107,46 @@ describe('objectsSlice', () => {
     expect(placed.kind).toBe('product');
     expect(placed.label).toBe('카페 테이블');
     expect(placed.imageDataUrl).toBe('data:image/png;base64,abc');
+  });
+
+  test('undo reverts the last mutation, redo re-applies it', () => {
+    const store = makeStore();
+    const id = store.getState().addGeneric('floor-1');
+    expect(store.getState().objects).toHaveLength(1);
+
+    store.getState().updateObjectPosition(id, 9, 9);
+    expect(store.getState().objects.find((o) => o.id === id).x).toBe(9);
+
+    store.getState().undo();
+    expect(store.getState().objects.find((o) => o.id === id).x).not.toBe(9);
+
+    store.getState().undo();
+    expect(store.getState().objects).toHaveLength(0);
+
+    store.getState().redo();
+    expect(store.getState().objects).toHaveLength(1);
+    store.getState().redo();
+    expect(store.getState().objects.find((o) => o.id === id).x).toBe(9);
+  });
+
+  test('a new action after undo clears the redo stack', () => {
+    const store = makeStore();
+    const id1 = store.getState().addGeneric('floor-1');
+    store.getState().undo();
+    expect(store.getState().objects).toHaveLength(0);
+
+    store.getState().addGeneric('floor-1');
+    expect(store.getState().future).toHaveLength(0);
+    store.getState().redo();
+    // nothing to redo — the branch created by the new addGeneric replaced it
+    expect(store.getState().objects).toHaveLength(1);
+    expect(store.getState().objects[0].id).not.toBe(id1);
+  });
+
+  test('undo/redo with nothing on the stack is a no-op, not a crash', () => {
+    const store = makeStore();
+    expect(() => store.getState().undo()).not.toThrow();
+    expect(() => store.getState().redo()).not.toThrow();
+    expect(store.getState().objects).toHaveLength(0);
   });
 });

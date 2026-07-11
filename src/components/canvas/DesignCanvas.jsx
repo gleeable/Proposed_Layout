@@ -45,6 +45,7 @@ export function DesignCanvas() {
   const updateObjectTransform = useAppStore((s) => s.updateObjectTransform);
   const updateObjectDetails = useAppStore((s) => s.updateObjectDetails);
   const applyDeltaToSelection = useAppStore((s) => s.applyDeltaToSelection);
+  const pushHistorySnapshot = useAppStore((s) => s.pushHistorySnapshot);
   const duplicateObjectAt = useAppStore((s) => s.duplicateObjectAt);
   const placingCatalogItemId = useAppStore((s) => s.placingCatalogItemId);
 
@@ -89,6 +90,19 @@ export function DesignCanvas() {
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       const state = useAppStore.getState();
       if (state.placingCatalogItemId) return; // placement mode owns keyboard input (Escape) elsewhere
+
+      if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (e.shiftKey) state.redo();
+        else state.undo();
+        return;
+      }
+      if (e.key.toLowerCase() === 'y' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        state.redo();
+        return;
+      }
+
       if (state.selectedIds.length === 0) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -248,6 +262,7 @@ export function DesignCanvas() {
               getNode={getNode}
               scale={scale}
               onDeltaMeters={(dx, dy) => applyDeltaToSelection(selectedIds, dx, dy)}
+              onDragBegin={pushHistorySnapshot}
             />
           </Layer>
         </Stage>

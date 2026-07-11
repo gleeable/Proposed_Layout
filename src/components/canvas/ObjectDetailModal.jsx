@@ -18,23 +18,16 @@ export function ObjectDetailModal({ objectId, onClose, onOpenViewer }) {
       widthMm: Math.round(metersToMm(object.width)),
       depthMm: Math.round(metersToMm(object.height)),
       verticalHeightMm: object.verticalHeightMm ?? 800,
+      elevationMm: object.elevationMm ?? 0,
       rotation: object.rotation,
       label: object.label,
       memo: object.memo ?? '',
     });
   }, [object]);
 
-  useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  if (!object || !form) return null;
-
-  const isValid = form.widthMm > 0 && form.depthMm > 0 && form.verticalHeightMm > 0;
+  const isValid = Boolean(
+    form && form.widthMm > 0 && form.depthMm > 0 && form.verticalHeightMm > 0 && form.elevationMm >= 0
+  );
 
   function handleChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -46,12 +39,30 @@ export function ObjectDetailModal({ objectId, onClose, onOpenViewer }) {
       width: mmToMeters(Number(form.widthMm)),
       height: mmToMeters(Number(form.depthMm)),
       verticalHeightMm: Number(form.verticalHeightMm),
+      elevationMm: Number(form.elevationMm),
       rotation: Number(form.rotation),
       label: form.label,
       memo: form.memo,
     });
     onClose();
   }
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        onClose();
+      } else if (e.key === 'Enter' && !e.isComposing && e.target?.tagName !== 'TEXTAREA') {
+        // Enter auto-saves from anywhere in the modal (except the memo
+        // textarea, where Enter should just insert a newline).
+        e.preventDefault();
+        handleSave();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, form, isValid]);
+
+  if (!object || !form) return null;
 
   return (
     <div className="object-detail-modal__backdrop" onClick={onClose}>
@@ -107,6 +118,16 @@ export function ObjectDetailModal({ objectId, onClose, onOpenViewer }) {
             />
           </label>
         </div>
+
+        <label>
+          바닥에서 띄우는 높이 (mm)
+          <input
+            type="number"
+            min="0"
+            value={form.elevationMm}
+            onChange={(e) => handleChange('elevationMm', e.target.value)}
+          />
+        </label>
 
         <label>
           메모

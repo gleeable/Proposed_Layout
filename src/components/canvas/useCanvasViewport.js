@@ -51,6 +51,26 @@ export function useCanvasViewport({ containerRef, disabled, onEmptyClick }) {
     return () => el.removeEventListener('wheel', handleWheel);
   }, [containerRef]);
 
+  // If the mouse button is released outside the browser (alt-tab, a native
+  // dialog, losing window focus mid-drag) the pointerup/pointercancel that
+  // would normally end a pan never reaches us — panState.current is left
+  // "moved" forever, and every subsequent mouse move over the canvas (even
+  // with no button held) keeps calling setPan, i.e. the layout permanently
+  // follows the cursor. Force-clear it whenever the window loses focus.
+  useEffect(() => {
+    function forceEndPan() {
+      if (!panState.current) return;
+      panState.current = null;
+      setIsPanning(false);
+    }
+    window.addEventListener('blur', forceEndPan);
+    document.addEventListener('visibilitychange', forceEndPan);
+    return () => {
+      window.removeEventListener('blur', forceEndPan);
+      document.removeEventListener('visibilitychange', forceEndPan);
+    };
+  }, []);
+
   function handleStagePointerDown(e) {
     if (disabledRef.current) return;
     const stage = e.target.getStage();
@@ -77,6 +97,18 @@ export function useCanvasViewport({ containerRef, disabled, onEmptyClick }) {
     const ps = panState.current;
     if (!ps) return;
     const evt = e.evt;
+
+    // Defense in depth alongside the blur/visibilitychange listener above:
+    // `buttons` is a live bitmask of currently-held mouse buttons on every
+    // pointermove event, independent of whether pointerup ever fired. If the
+    // primary button (bit 1) isn't set anymore, the drag has definitely
+    // ended even though we never got the event saying so — stop panning
+    // instead of letting the layout keep following the cursor.
+    if (typeof evt.buttons === 'number' && (evt.buttons & 1) === 0) {
+      endPan(e, { treatAsClick: false });
+      return;
+    }
+
     const dx = evt.clientX - ps.startClientX;
     const dy = evt.clientY - ps.startClientY;
 

@@ -5,6 +5,7 @@ import { createFloorsSlice } from './slices/floorsSlice';
 import { createObjectsSlice } from './slices/objectsSlice';
 import { createUiSlice } from './slices/uiSlice';
 import { createCatalogSlice } from './slices/catalogSlice';
+import { createHistorySlice } from './slices/historySlice';
 import { safePersistStorage } from '../services/persistStorage';
 import { emitStorageEvent, clearHydrationError } from '../services/storageEvents';
 import { stripImagesFromState, extractEmbeddedImages, restoreImagesIntoState } from './imagePersistence';
@@ -17,6 +18,7 @@ export const useAppStore = create(
       ...createObjectsSlice(...args),
       ...createUiSlice(...args),
       ...createCatalogSlice(...args),
+      ...createHistorySlice(...args),
     }),
     {
       name: 'space-layout-app',
@@ -26,10 +28,11 @@ export const useAppStore = create(
       // `migrate` below instead of silently reinterpreting old data.
       version: 2,
       storage: createJSONStorage(() => safePersistStorage),
-      // Selection, drag/pan/placement state, keyboard modifiers, etc. are
-      // deliberately NOT listed here — they're transient UI state, not
-      // layout data, and persisting them was making every select/deselect
-      // rewrite the (image-bloated) full state to localStorage.
+      // Selection, drag/pan/placement state, keyboard modifiers, undo/redo
+      // history (past/future), etc. are deliberately NOT listed here —
+      // they're transient UI state, not layout data, and persisting them
+      // was making every select/deselect rewrite the (image-bloated) full
+      // state to localStorage.
       partialize: (state) => stripImagesFromState({
         building: state.building,
         floors: state.floors,
