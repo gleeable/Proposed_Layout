@@ -26,10 +26,18 @@ const PRODUCT_CATEGORY_KEYWORDS = [
   { category: 'table', keywords: ['테이블', '책상', '데스크', 'table', 'desk'] },
   { category: 'sofa', keywords: ['소파', '카우치', '벤치', 'sofa', 'couch', 'bench'] },
   { category: 'shelf', keywords: ['선반', '책장', '책꽂이', 'shelf', 'bookcase', 'rack'] },
-  { category: 'cabinet', keywords: ['캐비닛', '서랍장', '수납장', '냉장고', 'cabinet', 'drawer', 'locker', 'fridge', 'refrigerator'] },
+  { category: 'cabinet', keywords: ['캐비닛', '서랍장', '수납장', 'cabinet', 'drawer', 'locker'] },
   { category: 'monitor', keywords: ['모니터', '티비', 'tv', '컴퓨터', '노트북', 'monitor', 'screen', 'laptop'] },
   { category: 'lamp', keywords: ['조명', '램프', '스탠드', 'lamp', 'light'] },
   { category: 'plant', keywords: ['화분', '식물', '나무', 'plant', 'pot'] },
+  {
+    category: 'appliance',
+    keywords: [
+      '전자레인지', '오븐', '냉장고', '세탁기', '건조기', '식기세척기', '정수기', '에어컨',
+      'microwave', 'oven', 'refrigerator', 'fridge', 'washer', 'washing machine', 'dryer',
+      'dishwasher', 'purifier', 'air conditioner', 'appliance',
+    ],
+  },
 ];
 
 function inferProductShapeCategory(label) {
@@ -406,6 +414,32 @@ function LampShape3D({ width, depth, height, fill }) {
   );
 }
 
+// A door with a dark window and a small control-panel strip reads as a
+// generic box appliance (microwave, fridge, washer, ...) without needing a
+// distinct model per appliance type.
+function ApplianceShape3D({ width, depth, height, fill }) {
+  const doorInset = Math.max(Math.min(width, height) * 0.06, 0.01);
+  const panelWidth = width * 0.12;
+  const windowWidth = Math.max(width - doorInset * 2 - panelWidth, 0.02);
+  const windowHeight = height - doorInset * 2;
+  return (
+    <group>
+      <mesh position={[0, height / 2, 0]}>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[-panelWidth / 2, height / 2, depth / 2 + 0.002]}>
+        <boxGeometry args={[windowWidth, windowHeight, 0.004]} />
+        <meshStandardMaterial color="#1F2937" />
+      </mesh>
+      <mesh position={[width / 2 - panelWidth / 2 - doorInset / 2, height / 2, depth / 2 + 0.002]}>
+        <boxGeometry args={[panelWidth, windowHeight, 0.004]} />
+        <meshStandardMaterial color="#9CA3AF" />
+      </mesh>
+    </group>
+  );
+}
+
 function ProductShape3D({ category, width, depth, height, fill }) {
   switch (category) {
     case 'chair':
@@ -424,6 +458,8 @@ function ProductShape3D({ category, width, depth, height, fill }) {
       return <LampShape3D width={width} depth={depth} height={height} fill={fill} />;
     case 'plant':
       return <TreeShape3D width={width} depth={depth} fill={fill} />;
+    case 'appliance':
+      return <ApplianceShape3D width={width} depth={depth} height={height} fill={fill} />;
     default:
       return <PlainBox width={width} depth={depth} height={height} fill={fill} />;
   }
