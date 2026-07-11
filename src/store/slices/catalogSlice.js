@@ -21,13 +21,13 @@ function emptyProductDetails() {
 export const createCatalogSlice = (set, get) => ({
   catalogItems: [],
 
-  addPhotoProduct: ({ label, imageDataUrl }) => {
+  addPhotoProduct: ({ label, imageDataUrl, modelUrl = null }) => {
     const newItem = {
       id: createId(),
       source: 'photo',
       label,
       imageDataUrl,
-      modelUrl: null,
+      modelUrl,
       createdAt: Date.now(),
       ...emptyProductDetails(),
     };

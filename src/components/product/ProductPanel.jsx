@@ -67,11 +67,31 @@ export function ProductPanel() {
     if (item) handleFile(item.getAsFile());
   }
 
-  function handleRegisterPhoto() {
+  async function handleRegisterPhoto() {
     if (!pendingPhoto || pendingPhoto.status !== 'ready') return;
-    addPhotoProduct({ label: pendingPhoto.label, imageDataUrl: pendingPhoto.processedDataUrl });
-    URL.revokeObjectURL(pendingPhoto.previewUrl);
+    const { label, processedDataUrl, previewUrl } = pendingPhoto;
+
+    setPendingPhoto((prev) => (prev ? { ...prev, status: 'registering' } : prev));
+    setProgressText('3D 모델 생성 중...');
+    // Sculpted 3D geometry (legs, backrest, etc.) instead of a flat photo
+    // pasted onto a box — same generator the "이름으로 생성" flow already
+    // uses. Falls back to the flat-box render (imageDataUrl only, no
+    // modelUrl) exactly like before if this fails, so nothing regresses.
+    let modelUrl = null;
+    try {
+      modelUrl = await generateProduct3DModel(processedDataUrl, {
+        onProgress: (progress, status) => {
+          setProgressText(`3D 모델 생성 중... ${progress}% (${status})`);
+        },
+      });
+    } catch (err3d) {
+      console.warn('3D 모델 생성 실패, 평면 이미지로 대체합니다.', err3d);
+    }
+
+    addPhotoProduct({ label, imageDataUrl: processedDataUrl, modelUrl });
+    URL.revokeObjectURL(previewUrl);
     setPendingPhoto(null);
+    setProgressText('');
   }
 
   function handleCancelPhoto() {
@@ -148,6 +168,7 @@ export function ProductPanel() {
             <div className="product-panel__preview">
               <img src={pendingPhoto.processedDataUrl || pendingPhoto.previewUrl} alt="미리보기" />
               {pendingPhoto.status === 'processing' && <p>{progressText || '배경 제거 중...'}</p>}
+              {pendingPhoto.status === 'registering' && <p>{progressText}</p>}
               {pendingPhoto.status === 'error' && <p className="product-panel__error">배경 제거 실패 — 다시 시도해주세요.</p>}
             </div>
           )}
@@ -159,6 +180,9 @@ export function ProductPanel() {
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
         </div>
+        <p className="product-panel__caption">
+          등록 시 배경을 제거하고, 회전 가능한 3D 모델도 함께 생성합니다 (1~2분 소요).
+        </p>
 
         {pendingPhoto && (
           <div className="product-panel__pending-actions" onClick={(e) => e.stopPropagation()}>
@@ -169,9 +193,11 @@ export function ProductPanel() {
               placeholder="제품 이름"
             />
             <div className="product-panel__pending-buttons">
-              <button type="button" onClick={handleCancelPhoto}>취소</button>
+              <button type="button" disabled={pendingPhoto.status === 'registering'} onClick={handleCancelPhoto}>
+                취소
+              </button>
               <button type="button" disabled={pendingPhoto.status !== 'ready'} onClick={handleRegisterPhoto}>
-                제품으로 등록
+                {pendingPhoto.status === 'registering' ? '등록 중...' : '제품으로 등록'}
               </button>
             </div>
           </div>
