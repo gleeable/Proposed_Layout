@@ -496,7 +496,10 @@ function PlacedObject3D({ object, footprint }) {
   const showLabel = object.kind !== 'product' || !object.modelUrl;
   const isShapedFacility = object.kind === 'facility' && SHAPED_3D_CATEGORIES.has(object.category);
   const isShapedProduct = object.kind === 'product' && !object.modelUrl;
-  const productCategory = isShapedProduct ? inferProductShapeCategory(object.label) : null;
+  // Gemini classifies the product name at registration time (more reliable
+  // than the keyword list below); fall back to keyword matching for
+  // products saved before that existed or when classification failed.
+  const productCategory = isShapedProduct ? (object.shapeCategory || inferProductShapeCategory(object.label)) : null;
   const averageColor = useAverageColor(isShapedProduct ? object.imageDataUrl : null);
 
   return (

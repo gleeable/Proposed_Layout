@@ -21,13 +21,14 @@ function emptyProductDetails() {
 export const createCatalogSlice = (set, get) => ({
   catalogItems: [],
 
-  addPhotoProduct: ({ label, imageDataUrl, modelUrl = null }) => {
+  addPhotoProduct: ({ label, imageDataUrl, modelUrl = null, shapeCategory = null }) => {
     const newItem = {
       id: createId(),
       source: 'photo',
       label,
       imageDataUrl,
       modelUrl,
+      shapeCategory,
       createdAt: Date.now(),
       ...emptyProductDetails(),
     };
@@ -36,13 +37,14 @@ export const createCatalogSlice = (set, get) => ({
     return newItem.id;
   },
 
-  addGeneratedProduct: ({ label, imageDataUrl = null, modelUrl = null }) => {
+  addGeneratedProduct: ({ label, imageDataUrl = null, modelUrl = null, shapeCategory = null }) => {
     const newItem = {
       id: createId(),
       source: 'generated',
       label,
       imageDataUrl,
       modelUrl,
+      shapeCategory,
       createdAt: Date.now(),
       ...emptyProductDetails(),
     };

@@ -28,6 +28,7 @@ function buildProductObject(catalogItem, floorId, xM, yM) {
     fill: '#93C5FD',
     imageDataUrl: catalogItem.imageDataUrl,
     modelUrl: catalogItem.modelUrl || null,
+    shapeCategory: catalogItem.shapeCategory || null,
     x: xM,
     y: yM,
     width: catalogItem.width || DEFAULT_PRODUCT_SIZE_M,

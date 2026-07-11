@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { removeImageBackground } from '../../services/backgroundRemoval';
 import { generateProductImage } from '../../services/imageGeneration';
 import { generateProduct3DModel } from '../../services/model3d';
+import { classifyProductShapeCategory } from '../../services/productClassification';
 import { ProductViewerModal } from '../productViewer/ProductViewerModal';
 import './ProductPanel.css';
 
@@ -77,18 +78,20 @@ export function ProductPanel() {
     // pasted onto a box — same generator the "이름으로 생성" flow already
     // uses. Falls back to the flat-box render (imageDataUrl only, no
     // modelUrl) exactly like before if this fails, so nothing regresses.
-    let modelUrl = null;
-    try {
-      modelUrl = await generateProduct3DModel(processedDataUrl, {
-        onProgress: (progress, status) => {
-          setProgressText(`3D 모델 생성 중... ${progress}% (${status})`);
-        },
-      });
-    } catch (err3d) {
+    // Runs alongside the (much slower) 3D model attempt — if that fails, this
+    // still lets the 3D view draw a real chair/table/etc. shape instead of a
+    // plain box.
+    const modelPromise = generateProduct3DModel(processedDataUrl, {
+      onProgress: (progress, status) => {
+        setProgressText(`3D 모델 생성 중... ${progress}% (${status})`);
+      },
+    }).catch((err3d) => {
       console.warn('3D 모델 생성 실패, 평면 이미지로 대체합니다.', err3d);
-    }
+      return null;
+    });
+    const [modelUrl, shapeCategory] = await Promise.all([modelPromise, classifyProductShapeCategory(label)]);
 
-    addPhotoProduct({ label, imageDataUrl: processedDataUrl, modelUrl });
+    addPhotoProduct({ label, imageDataUrl: processedDataUrl, modelUrl, shapeCategory });
     URL.revokeObjectURL(previewUrl);
     setPendingPhoto(null);
     setProgressText('');
@@ -124,23 +127,23 @@ export function ProductPanel() {
         // 누끼 실패 시 원본(흰 배경) 이미지라도 사용
       }
 
-      let modelUrl = null;
       setGenerateProgressText('3D 모델 생성 중...');
-      try {
-        modelUrl = await generateProduct3DModel(imageDataUrl, {
-          onProgress: (progress, status) => {
-            setGenerateProgressText(`3D 모델 생성 중... ${progress}% (${status})`);
-          },
-        });
-      } catch (err3d) {
+      const modelPromise = generateProduct3DModel(imageDataUrl, {
+        onProgress: (progress, status) => {
+          setGenerateProgressText(`3D 모델 생성 중... ${progress}% (${status})`);
+        },
+      }).catch((err3d) => {
         console.warn('3D 모델 생성 실패, 평면 이미지로 대체합니다.', err3d);
-      }
+        return null;
+      });
+      const [modelUrl, shapeCategory] = await Promise.all([modelPromise, classifyProductShapeCategory(label)]);
 
-      addGeneratedProduct({ label, imageDataUrl, modelUrl });
+      addGeneratedProduct({ label, imageDataUrl, modelUrl, shapeCategory });
       setGeneratedName('');
       setGenerateStatus('idle');
     } catch (err) {
-      addGeneratedProduct({ label });
+      const shapeCategory = await classifyProductShapeCategory(label);
+      addGeneratedProduct({ label, shapeCategory });
       setGeneratedName('');
       setGenerateStatus('error');
       setGenerateError(`이미지 생성 실패로 기본 오브젝트로 대체했습니다: ${err.message}`);
