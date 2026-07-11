@@ -12,6 +12,7 @@ const WALL_COLOR = '#c7d2fe';
 const FLOOR_COLOR = '#f3f4f6';
 const WALK_SPEED_M_S = 1.4; // an average adult walking pace
 const PERSON_RADIUS_M = 0.25; // keeps the avatar from walking through walls
+const PERSON_HIDE_DELAY_S = 2; // hide the avatar after this long with no arrow key held
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const SHAPED_3D_CATEGORIES = new Set(['stairs', 'tree', 'table', 'chair', 'door']);
@@ -262,8 +263,11 @@ function Person({ footprint, keysHeldRef }) {
   const groupRef = useRef(null);
   const posRef = useRef({ x: 0, z: 0 });
   const headingRef = useRef(0);
+  // Starts far in the past so the avatar stays hidden until the first arrow
+  // key press, rather than flashing on screen before anyone's touched a key.
+  const lastActiveElapsedRef = useRef(-Infinity);
 
-  useFrame((_, rawDelta) => {
+  useFrame((state, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1); // guard against huge jumps after a tab was backgrounded
     const keys = keysHeldRef.current;
     let dx = 0;
@@ -274,6 +278,7 @@ function Person({ footprint, keysHeldRef }) {
     if (keys.has('ArrowRight')) dx += 1;
 
     if (dx !== 0 || dz !== 0) {
+      lastActiveElapsedRef.current = state.clock.elapsedTime;
       const len = Math.hypot(dx, dz);
       dx /= len;
       dz /= len;
@@ -287,22 +292,44 @@ function Person({ footprint, keysHeldRef }) {
 
     const group = groupRef.current;
     if (group) {
+      group.visible = state.clock.elapsedTime - lastActiveElapsedRef.current < PERSON_HIDE_DELAY_S;
       group.position.set(posRef.current.x, 0, posRef.current.z);
       group.rotation.y = headingRef.current;
     }
   });
 
   return (
-    <group ref={groupRef}>
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.2, 0.55, 4, 8]} />
+    <group ref={groupRef} visible={false}>
+      {/* legs */}
+      <mesh position={[-0.08, 0.25, 0]} castShadow>
+        <cylinderGeometry args={[0.07, 0.07, 0.5, 8]} />
+        <meshStandardMaterial color="#1E3A8A" />
+      </mesh>
+      <mesh position={[0.08, 0.25, 0]} castShadow>
+        <cylinderGeometry args={[0.07, 0.07, 0.5, 8]} />
+        <meshStandardMaterial color="#1E3A8A" />
+      </mesh>
+      {/* torso */}
+      <mesh position={[0, 0.7, 0]} castShadow>
+        <boxGeometry args={[0.3, 0.4, 0.18]} />
         <meshStandardMaterial color="#2563EB" />
       </mesh>
-      <mesh position={[0, 1.02, 0]} castShadow>
-        <sphereGeometry args={[0.15, 14, 14]} />
+      {/* arms */}
+      <mesh position={[-0.22, 0.71, 0]} castShadow>
+        <cylinderGeometry args={[0.05, 0.05, 0.38, 8]} />
+        <meshStandardMaterial color="#2563EB" />
+      </mesh>
+      <mesh position={[0.22, 0.71, 0]} castShadow>
+        <cylinderGeometry args={[0.05, 0.05, 0.38, 8]} />
+        <meshStandardMaterial color="#2563EB" />
+      </mesh>
+      {/* head */}
+      <mesh position={[0, 1.04, 0]} castShadow>
+        <sphereGeometry args={[0.14, 14, 14]} />
         <meshStandardMaterial color="#FBBF24" />
       </mesh>
-      <mesh position={[0, 1.02, 0.15]}>
+      {/* facing indicator */}
+      <mesh position={[0, 1.04, 0.14]}>
         <coneGeometry args={[0.05, 0.1, 8]} />
         <meshStandardMaterial color="#111827" />
       </mesh>
