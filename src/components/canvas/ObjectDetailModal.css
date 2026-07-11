@@ -51,6 +51,34 @@
   flex: 1;
 }
 
+.object-detail-modal__row input[type='color'] {
+  padding: 2px;
+  height: 30px;
+  width: 100%;
+}
+
+.object-detail-modal__row button {
+  align-self: flex-end;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.object-detail-modal__checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px !important;
+}
+
+.object-detail-modal__checkbox input {
+  width: auto;
+}
+
 .object-detail-modal__actions {
   display: flex;
   justify-content: flex-end;

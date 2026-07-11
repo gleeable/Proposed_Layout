@@ -25,7 +25,10 @@ function buildProductObject(catalogItem, floorId, xM, yM) {
     kind: 'product',
     category: 'custom',
     label: catalogItem.label,
-    fill: '#93C5FD',
+    // null (not a fixed default) so Design3DView's average-photo-color tint
+    // keeps working until the user explicitly picks a color in the object
+    // detail modal.
+    fill: null,
     imageDataUrl: catalogItem.imageDataUrl,
     modelUrl: catalogItem.modelUrl || null,
     shapeCategory: catalogItem.shapeCategory || null,

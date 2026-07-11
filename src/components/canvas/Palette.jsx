@@ -1,5 +1,6 @@
 import { useAppStore } from '../../store/useAppStore';
 import { FACILITY_CATALOG } from '../../domain/facilityCatalog';
+import { MaterialPicker } from './MaterialPicker';
 import './Palette.css';
 
 export function Palette() {
@@ -44,6 +45,9 @@ export function Palette() {
           </button>
         ))}
       </div>
+
+      <h2>마감재</h2>
+      <MaterialPicker />
 
       <h2>일반 오브젝트</h2>
       <button type="button" className="palette__item palette__item--generic" onClick={handleAddGeneric}>

@@ -22,6 +22,8 @@ export function ObjectDetailModal({ objectId, onClose, onOpenViewer }) {
       rotation: object.rotation,
       label: object.label,
       memo: object.memo ?? '',
+      showLabelIn3D: object.showLabelIn3D ?? false,
+      fill: object.fill ?? null,
     });
   }, [object]);
 
@@ -43,6 +45,8 @@ export function ObjectDetailModal({ objectId, onClose, onOpenViewer }) {
       rotation: Number(form.rotation),
       label: form.label,
       memo: form.memo,
+      showLabelIn3D: form.showLabelIn3D,
+      fill: form.fill,
     });
     onClose();
   }
@@ -127,6 +131,31 @@ export function ObjectDetailModal({ objectId, onClose, onOpenViewer }) {
             value={form.elevationMm}
             onChange={(e) => handleChange('elevationMm', e.target.value)}
           />
+        </label>
+
+        <div className="object-detail-modal__row">
+          <label>
+            색상
+            <input
+              type="color"
+              value={form.fill || '#93c5fd'}
+              onChange={(e) => handleChange('fill', e.target.value)}
+            />
+          </label>
+          {object.kind === 'product' && object.imageDataUrl && (
+            <button type="button" className="object-detail-modal__cancel" onClick={() => handleChange('fill', null)}>
+              사진 색상 사용
+            </button>
+          )}
+        </div>
+
+        <label className="object-detail-modal__checkbox">
+          <input
+            type="checkbox"
+            checked={form.showLabelIn3D}
+            onChange={(e) => handleChange('showLabelIn3D', e.target.checked)}
+          />
+          3D에 이름 표시하기
         </label>
 
         <label>

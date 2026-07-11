@@ -33,17 +33,14 @@ async function parseImageGenerationResponse(response, fallbackMessage) {
   throw new Error('응답에 이미지 데이터가 없습니다.');
 }
 
-async function generateProductImageViaWorker(productName) {
+async function generateImageViaWorker(prompt) {
   let response;
 
   try {
     response = await fetch(`${normalizeWorkerUrl(CLOUDFLARE_WORKER_URL)}/generate-product-image`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productName,
-        prompt: buildPrompt(productName),
-      }),
+      body: JSON.stringify({ prompt }),
     });
   } catch (error) {
     throw new Error(`Cloudflare Worker 연결 실패: ${error.message}`);
@@ -52,17 +49,14 @@ async function generateProductImageViaWorker(productName) {
   return parseImageGenerationResponse(response, `Cloudflare Worker 요청 실패 (HTTP ${response.status})`);
 }
 
-async function generateProductImageViaLocalApi(productName) {
+async function generateImageViaLocalApi(prompt) {
   let response;
 
   try {
     response = await fetch('/api/generate-product-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productName,
-        prompt: buildPrompt(productName),
-      }),
+      body: JSON.stringify({ prompt }),
     });
   } catch (error) {
     throw new Error(`로컬 이미지 생성 API 연결 실패: ${error.message}`);
@@ -71,7 +65,7 @@ async function generateProductImageViaLocalApi(productName) {
   return parseImageGenerationResponse(response, `로컬 이미지 생성 요청 실패 (HTTP ${response.status})`);
 }
 
-async function generateProductImageDirect(productName) {
+async function generateImageDirect(prompt) {
   if (!API_KEY) {
     throw new Error('브라우저 직접 호출용 Google API 키가 설정되어 있지 않습니다.');
   }
@@ -85,7 +79,7 @@ async function generateProductImageDirect(productName) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(productName) }] }],
+          contents: [{ parts: [{ text: prompt }] }],
         }),
       }
     );
@@ -110,11 +104,17 @@ async function generateProductImageDirect(productName) {
   return `data:${mimeType};base64,${data}`;
 }
 
-export async function generateProductImage(productName) {
+// Shared by product-icon generation and material-swatch generation (see
+// materialGeneration.js) — same same-origin -> Cloudflare Worker -> direct
+// Google API fallback chain, just with a caller-supplied prompt.
+export async function generateImageFromPrompt(prompt) {
   let lastError = null;
 
   try {
-    return generateProductImageViaLocalApi(productName);
+    // Must be awaited here — without it, a rejection surfaces after this
+    // try/catch has already returned the (still-pending) promise, skipping
+    // the Worker/direct fallbacks below entirely.
+    return await generateImageViaLocalApi(prompt);
   } catch (error) {
     lastError = error;
     console.warn('Same-origin image generation API failed. Falling back to Cloudflare Worker or direct Google API request.', error);
@@ -122,7 +122,7 @@ export async function generateProductImage(productName) {
 
   if (CLOUDFLARE_WORKER_URL && !isPlaceholderWorkerUrl(CLOUDFLARE_WORKER_URL)) {
     try {
-      return await generateProductImageViaWorker(productName);
+      return await generateImageViaWorker(prompt);
     } catch (error) {
       lastError = error;
       console.warn('Cloudflare Worker image generation failed. Falling back to direct Google API request.', error);
@@ -130,7 +130,7 @@ export async function generateProductImage(productName) {
   }
 
   if (API_KEY) {
-    return generateProductImageDirect(productName);
+    return generateImageDirect(prompt);
   }
 
   if (lastError) {
@@ -138,4 +138,8 @@ export async function generateProductImage(productName) {
   }
 
   throw new Error('이미지 생성 API를 사용할 수 없습니다. Cloudflare Pages Function과 GOOGLE_AI_STUDIO_APIKEY 설정을 확인해주세요.');
+}
+
+export async function generateProductImage(productName) {
+  return generateImageFromPrompt(buildPrompt(productName));
 }

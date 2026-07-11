@@ -44,6 +44,15 @@ export function useCanvasViewport({ containerRef, disabled, onEmptyClick }) {
         e.preventDefault();
         const delta = normalizeWheelDelta(e) * WHEEL_PAN_SENSITIVITY;
         setPan((p) => ({ ...p, x: p.x + delta }));
+        return;
+      }
+      if (e.shiftKey) {
+        e.preventDefault();
+        // Browsers natively swap deltaY into deltaX while Shift is held, so
+        // the vertical scroll motion shows up as deltaX by the time we see
+        // it here — normalizeWheelDelta already picks whichever axis moved.
+        const delta = normalizeWheelDelta(e) * WHEEL_PAN_SENSITIVITY;
+        setPan((p) => ({ ...p, y: p.y + delta }));
       }
     }
 

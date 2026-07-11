@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Html, OrbitControls, PerspectiveCamera, useGLTF } from '@react-three/drei';
 import { useAppStore } from '../../store/useAppStore';
+import { resolveMaterialImage } from '../../services/materialResolve';
 import './Design3DView.css';
 
 const DEFAULT_FLOOR_HEIGHT_M = 3;
@@ -30,6 +31,9 @@ const PRODUCT_CATEGORY_KEYWORDS = [
   { category: 'monitor', keywords: ['모니터', '티비', 'tv', '컴퓨터', '노트북', 'monitor', 'screen', 'laptop'] },
   { category: 'lamp', keywords: ['조명', '램프', '스탠드', 'lamp', 'light'] },
   { category: 'plant', keywords: ['화분', '식물', '나무', 'plant', 'pot'] },
+  { category: 'bed', keywords: ['침대', '매트리스', 'bed', 'mattress'] },
+  { category: 'pillow', keywords: ['베개', '쿠션', 'pillow', 'cushion'] },
+  { category: 'hairdryer', keywords: ['드라이기', '헤어드라이기', 'hair dryer', 'hairdryer'] },
   {
     category: 'appliance',
     keywords: [
@@ -100,6 +104,45 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+// Loads a material swatch (built-in procedural PNG or a user-requested photo)
+// as a repeating THREE texture. Manual TextureLoader + effect (matching
+// useAverageColor's style above) rather than drei's useTexture, since the
+// source image can be null/changing and we don't want to wrap walls/floor in
+// Suspense just for this.
+function useSurfaceTexture(imageDataUrl, repeatX, repeatY) {
+  const [texture, setTexture] = useState(null);
+
+  useEffect(() => {
+    if (!imageDataUrl) {
+      setTexture(null);
+      return undefined;
+    }
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    loader.load(imageDataUrl, (tex) => {
+      if (cancelled) {
+        tex.dispose();
+        return;
+      }
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      setTexture(tex);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [imageDataUrl]);
+
+  useEffect(() => {
+    if (!texture) return;
+    texture.repeat.set(Math.max(0.5, repeatX), Math.max(0.5, repeatY));
+    texture.needsUpdate = true;
+  }, [texture, repeatX, repeatY]);
+
+  return texture;
+}
+
 // Same x/z/rotation convention PlacedObject3D renders with: world position is
 // (object.x - footprint.widthM/2, object.y - footprint.depthM/2) and the
 // object's local frame is rotated by -radians(object.rotation). Used to test
@@ -125,29 +168,60 @@ function collidesWithAny(worldX, worldZ, objects, footprint) {
   ));
 }
 
-function WallMaterial() {
-  return <meshStandardMaterial color={WALL_COLOR} transparent opacity={0.4} side={THREE.DoubleSide} />;
+// Without a chosen wallpaper/tile finish, walls stay the original
+// translucent placeholder (so you can still see inside from outside). Once a
+// material is applied, they render as opaque finished walls with that
+// texture — a plain tinted-glass look would make no sense for a "finish".
+function WallMaterial({ texture }) {
+  // Every prop is set explicitly on every render (never omitted) — R3F's
+  // applyProps only sets props present in the current render and leaves
+  // previously-set ones untouched, so switching between "has texture" and
+  // "no texture" by omitting transparent/opacity/color between renders would
+  // leave the untextured material's stale 0.4 opacity stuck on the same
+  // underlying THREE.Material instance once a texture arrives.
+  //
+  // toneMapped={false} once textured: the scene's light intensities push
+  // R3F's default ACES tone-mapping curve hard enough that a moderately
+  // dark/saturated swatch (navy, charcoal, ...) gets crushed to near-neutral
+  // gray by the time it reaches the screen — verified by A/B testing against
+  // meshBasicMaterial, which isn't tone-mapped and showed the true hue fine.
+  // Bypassing tone-mapping for the textured material shows the swatch's
+  // actual color instead. The untextured placeholder is left tone-mapped
+  // since it's pale enough (#c7d2fe) that the curve barely affects it, and
+  // it should still respond to scene lighting like everything else.
+  return (
+    <meshStandardMaterial
+      map={texture || null}
+      color={texture ? '#ffffff' : WALL_COLOR}
+      transparent={!texture}
+      opacity={texture ? 1 : 0.4}
+      side={THREE.DoubleSide}
+      toneMapped={!texture}
+    />
+  );
 }
 
-function Walls({ footprint, heightM }) {
+function Walls({ footprint, heightM, materialImage }) {
   const wallY = heightM / 2;
+  const textureNS = useSurfaceTexture(materialImage, footprint.widthM, heightM);
+  const textureEW = useSurfaceTexture(materialImage, footprint.depthM, heightM);
   return (
     <group>
       <mesh position={[0, wallY, -footprint.depthM / 2]}>
         <boxGeometry args={[footprint.widthM + WALL_THICKNESS_M, heightM, WALL_THICKNESS_M]} />
-        <WallMaterial />
+        <WallMaterial texture={textureNS} />
       </mesh>
       <mesh position={[0, wallY, footprint.depthM / 2]}>
         <boxGeometry args={[footprint.widthM + WALL_THICKNESS_M, heightM, WALL_THICKNESS_M]} />
-        <WallMaterial />
+        <WallMaterial texture={textureNS} />
       </mesh>
       <mesh position={[-footprint.widthM / 2, wallY, 0]}>
         <boxGeometry args={[WALL_THICKNESS_M, heightM, footprint.depthM + WALL_THICKNESS_M]} />
-        <WallMaterial />
+        <WallMaterial texture={textureEW} />
       </mesh>
       <mesh position={[footprint.widthM / 2, wallY, 0]}>
         <boxGeometry args={[WALL_THICKNESS_M, heightM, footprint.depthM + WALL_THICKNESS_M]} />
-        <WallMaterial />
+        <WallMaterial texture={textureEW} />
       </mesh>
     </group>
   );
@@ -440,6 +514,74 @@ function ApplianceShape3D({ width, depth, height, fill }) {
   );
 }
 
+// Low frame + a thicker mattress slab, with a headboard at one end and a
+// pair of pillow bumps so it reads as a bed rather than a plain platform.
+function BedShape3D({ width, depth, height, fill }) {
+  const frameHeight = Math.max(height * 0.3, 0.15);
+  const mattressHeight = Math.max(height - frameHeight, 0.1);
+  const headboardHeight = height + Math.max(depth * 0.25, 0.15);
+  const headboardThickness = Math.max(Math.min(depth * 0.06, 0.06), 0.02);
+  const pillowWidth = width * 0.35;
+  const pillowDepth = depth * 0.18;
+  const pillowHeight = Math.max(mattressHeight * 0.4, 0.05);
+  return (
+    <group>
+      <mesh position={[0, frameHeight / 2, 0]}>
+        <boxGeometry args={[width, frameHeight, depth]} />
+        <meshStandardMaterial color="#78716C" />
+      </mesh>
+      <mesh position={[0, frameHeight + mattressHeight / 2, 0]}>
+        <boxGeometry args={[width * 0.98, mattressHeight, depth * 0.98]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, headboardHeight / 2, -depth / 2 - headboardThickness / 2]}>
+        <boxGeometry args={[width, headboardHeight, headboardThickness]} />
+        <meshStandardMaterial color="#57534E" />
+      </mesh>
+      {[-1, 1].map((sx) => (
+        <mesh
+          key={sx}
+          position={[sx * (pillowWidth / 2 + width * 0.05), frameHeight + mattressHeight + pillowHeight / 2, -depth / 2 + pillowDepth]}
+        >
+          <boxGeometry args={[pillowWidth, pillowHeight, pillowDepth]} />
+          <meshStandardMaterial color="#F5F5F4" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// A squashed ellipsoid reads as a soft cushion far better than a box.
+function PillowShape3D({ width, depth, height, fill }) {
+  return (
+    <mesh position={[0, height / 2, 0]} scale={[width / 2, height / 2, depth / 2]}>
+      <sphereGeometry args={[1, 16, 12]} />
+      <meshStandardMaterial color={fill} />
+    </mesh>
+  );
+}
+
+// Gun-shaped silhouette: a horizontal barrel plus a perpendicular handle,
+// which reads as a hair dryer far better than a plain box.
+function HairDryerShape3D({ width, depth, height, fill }) {
+  const barrelLength = Math.max(width, depth);
+  const barrelRadius = Math.min(height, Math.min(width, depth)) * 0.4;
+  const handleLength = Math.max(height - barrelRadius, barrelRadius * 1.5);
+  const handleRadius = barrelRadius * 0.55;
+  return (
+    <group>
+      <mesh position={[0, height - barrelRadius, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[barrelRadius, barrelRadius * 0.7, barrelLength, 16]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, height - barrelRadius - handleLength / 2, 0]} rotation={[0.15, 0, 0]}>
+        <cylinderGeometry args={[handleRadius, handleRadius * 0.85, handleLength, 12]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+    </group>
+  );
+}
+
 function ProductShape3D({ category, width, depth, height, fill }) {
   switch (category) {
     case 'chair':
@@ -460,6 +602,12 @@ function ProductShape3D({ category, width, depth, height, fill }) {
       return <TreeShape3D width={width} depth={depth} fill={fill} />;
     case 'appliance':
       return <ApplianceShape3D width={width} depth={depth} height={height} fill={fill} />;
+    case 'bed':
+      return <BedShape3D width={width} depth={depth} height={height} fill={fill} />;
+    case 'pillow':
+      return <PillowShape3D width={width} depth={depth} height={height} fill={fill} />;
+    case 'hairdryer':
+      return <HairDryerShape3D width={width} depth={depth} height={height} fill={fill} />;
     default:
       return <PlainBox width={width} depth={depth} height={height} fill={fill} />;
   }
@@ -490,28 +638,34 @@ function PlacedObject3D({ object, footprint }) {
   const x = object.x - footprint.widthM / 2;
   const z = object.y - footprint.depthM / 2;
   const rotY = -THREE.MathUtils.degToRad(object.rotation || 0);
-  // A hand-drawn shape doesn't look like the real product the way a photo
-  // did, so show the label to make up for it — but not once a real 3D model
-  // is available, since that already reads as the actual product.
-  const showLabel = object.kind !== 'product' || !object.modelUrl;
+  // Off by default (F7-style opt-in) — the 2D object detail modal's "3D에
+  // 이름 표시하기" checkbox controls this per object.
+  const showLabel = Boolean(object.showLabelIn3D);
   const isShapedFacility = object.kind === 'facility' && SHAPED_3D_CATEGORIES.has(object.category);
   const isShapedProduct = object.kind === 'product' && !object.modelUrl;
   // Gemini classifies the product name at registration time (more reliable
   // than the keyword list below); fall back to keyword matching for
-  // products saved before that existed or when classification failed.
-  const productCategory = isShapedProduct ? (object.shapeCategory || inferProductShapeCategory(object.label)) : null;
+  // products saved before that existed, when classification failed, or when
+  // it landed on the generic "box" fallback — newer keyword categories
+  // (bed/pillow/hairdryer) didn't exist yet when older items were classified.
+  const productCategory = isShapedProduct
+    ? ((object.shapeCategory && object.shapeCategory !== 'box') ? object.shapeCategory : inferProductShapeCategory(object.label))
+    : null;
   const averageColor = useAverageColor(isShapedProduct ? object.imageDataUrl : null);
+  // A color picked explicitly in the object detail modal always wins over
+  // the auto-sampled photo color, which in turn beats the plain default.
+  const resolvedFill = object.fill || averageColor || '#93C5FD';
 
   return (
     <group position={[x, elevationM, z]} rotation={[0, rotY, 0]}>
       {object.modelUrl ? (
         <ProductModel3D width={width} depth={depth} height={heightM} modelUrl={object.modelUrl} />
       ) : isShapedProduct ? (
-        <ProductShape3D category={productCategory} width={width} depth={depth} height={heightM} fill={averageColor || object.fill} />
+        <ProductShape3D category={productCategory} width={width} depth={depth} height={heightM} fill={resolvedFill} />
       ) : isShapedFacility ? (
-        <FacilityShape3D category={object.category} width={width} depth={depth} height={heightM} fill={object.fill} />
+        <FacilityShape3D category={object.category} width={width} depth={depth} height={heightM} fill={resolvedFill} />
       ) : (
-        <PlainBox width={width} depth={depth} height={heightM} fill={object.fill} />
+        <PlainBox width={width} depth={depth} height={heightM} fill={resolvedFill} />
       )}
       {showLabel && (
         <Html position={[0, heightM + 0.2, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
@@ -685,7 +839,23 @@ function Person({ footprint, floorObjects, keysHeldRef }) {
   );
 }
 
-function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef }) {
+function Floor({ footprint, materialImage }) {
+  const texture = useSurfaceTexture(materialImage, footprint.widthM, footprint.depthM);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[footprint.widthM, footprint.depthM]} />
+      {/* Same explicit-every-prop + toneMapped reasoning as WallMaterial above. */}
+      <meshStandardMaterial
+        map={texture || null}
+        color={texture ? '#ffffff' : FLOOR_COLOR}
+        side={THREE.DoubleSide}
+        toneMapped={!texture}
+      />
+    </mesh>
+  );
+}
+
+function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef, wallMaterialImage, floorMaterialImage }) {
   const maxDim = Math.max(footprint.widthM, footprint.depthM);
   const camDist = maxDim * 1.3 + 4;
 
@@ -703,13 +873,10 @@ function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef }) {
       <ambientLight intensity={0.7} />
       <directionalLight position={[maxDim, maxDim * 1.5, maxDim]} intensity={0.9} />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[footprint.widthM, footprint.depthM]} />
-        <meshStandardMaterial color={FLOOR_COLOR} side={THREE.DoubleSide} />
-      </mesh>
+      <Floor footprint={footprint} materialImage={floorMaterialImage} />
       <gridHelper args={[maxDim * 1.6, 24, '#a5b4fc', '#e5e7eb']} position={[0, 0.001, 0]} />
 
-      <Walls footprint={footprint} heightM={floorHeightM} />
+      <Walls footprint={footprint} heightM={floorHeightM} materialImage={wallMaterialImage} />
 
       {floorObjects.map((object) => (
         <Suspense key={object.id} fallback={null}>
@@ -726,8 +893,20 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
   const building = useAppStore((s) => s.building);
   const activeFloorId = useAppStore((s) => s.activeFloorId);
   const objects = useAppStore((s) => s.objects);
+  const wallMaterialId = useAppStore((s) => s.wallMaterialId);
+  const floorMaterialId = useAppStore((s) => s.floorMaterialId);
+  const customMaterials = useAppStore((s) => s.customMaterials);
   const keysHeldRef = useRef(new Set());
   const rendererRef = useRef(null);
+
+  const wallMaterialImage = useMemo(
+    () => resolveMaterialImage(wallMaterialId, customMaterials),
+    [wallMaterialId, customMaterials]
+  );
+  const floorMaterialImage = useMemo(
+    () => resolveMaterialImage(floorMaterialId, customMaterials),
+    [floorMaterialId, customMaterials]
+  );
 
   // Lets callers outside this view (e.g. the "PDF로 저장" button) grab a
   // still image of whatever the 3D canvas is currently showing.
@@ -792,6 +971,8 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
           floorObjects={floorObjects}
           floorHeightM={floorHeightM}
           keysHeldRef={keysHeldRef}
+          wallMaterialImage={wallMaterialImage}
+          floorMaterialImage={floorMaterialImage}
         />
       </Canvas>
     </div>

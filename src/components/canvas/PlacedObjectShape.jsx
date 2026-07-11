@@ -88,7 +88,7 @@ export function PlacedObjectShape({
             y={-pxH / 2}
             width={pxW}
             height={pxH}
-            fill={fill}
+            fill={fill || '#93C5FD'}
             stroke={isSelected ? '#4338ca' : '#9ca3af'}
             strokeWidth={isSelected ? 2 : 1}
             cornerRadius={3}

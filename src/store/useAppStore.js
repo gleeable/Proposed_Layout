@@ -6,6 +6,7 @@ import { createObjectsSlice } from './slices/objectsSlice';
 import { createUiSlice } from './slices/uiSlice';
 import { createCatalogSlice } from './slices/catalogSlice';
 import { createHistorySlice } from './slices/historySlice';
+import { createMaterialsSlice } from './slices/materialsSlice';
 import { safePersistStorage } from '../services/persistStorage';
 import { emitStorageEvent, clearHydrationError } from '../services/storageEvents';
 import { stripImagesFromState, extractEmbeddedImages, restoreImagesIntoState } from './imagePersistence';
@@ -19,6 +20,7 @@ export const useAppStore = create(
       ...createUiSlice(...args),
       ...createCatalogSlice(...args),
       ...createHistorySlice(...args),
+      ...createMaterialsSlice(...args),
     }),
     {
       name: 'space-layout-app',
@@ -26,7 +28,9 @@ export const useAppStore = create(
       // IndexedDB (see imagePersistence.js) — this is what was blowing the
       // storage quota. Bumping the version routes existing users through
       // `migrate` below instead of silently reinterpreting old data.
-      version: 2,
+      // v2 -> v3: added customMaterials, which carry the same kind of
+      // imageDataUrl payload and need the same IndexedDB treatment.
+      version: 3,
       storage: createJSONStorage(() => safePersistStorage),
       // Selection, drag/pan/placement state, keyboard modifiers, undo/redo
       // history (past/future), etc. are deliberately NOT listed here —
@@ -40,6 +44,9 @@ export const useAppStore = create(
         activeFloorId: state.activeFloorId,
         activeTab: state.activeTab,
         catalogItems: state.catalogItems,
+        customMaterials: state.customMaterials,
+        wallMaterialId: state.wallMaterialId,
+        floorMaterialId: state.floorMaterialId,
       }),
       migrate: async (persistedState, version) => {
         if (version < 2) {

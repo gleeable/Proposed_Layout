@@ -15,6 +15,7 @@ export function stripImagesFromState(state) {
     ...state,
     catalogItems: (state.catalogItems || []).map(stripImageDataUrl),
     objects: (state.objects || []).map(stripImageDataUrl),
+    customMaterials: (state.customMaterials || []).map(stripImageDataUrl),
   };
 }
 
@@ -31,6 +32,7 @@ export async function extractEmbeddedImages(state) {
   };
   (state.catalogItems || []).forEach(visit);
   (state.objects || []).forEach(visit);
+  (state.customMaterials || []).forEach(visit);
   await Promise.all(jobs);
   return stripImagesFromState(state);
 }
@@ -44,6 +46,7 @@ export async function restoreImagesIntoState(getState, setState) {
   const ids = [
     ...(state.catalogItems || []).map((item) => item.id),
     ...(state.objects || []).map((object) => object.id),
+    ...(state.customMaterials || []).map((material) => material.id),
   ];
   const blobs = await getImageBlobs(ids);
   if (blobs.size === 0) return;
@@ -53,6 +56,9 @@ export async function restoreImagesIntoState(getState, setState) {
     )),
     objects: state.objects.map((object) => (
       blobs.has(object.id) ? { ...object, imageDataUrl: blobs.get(object.id) } : object
+    )),
+    customMaterials: (state.customMaterials || []).map((material) => (
+      blobs.has(material.id) ? { ...material, imageDataUrl: blobs.get(material.id) } : material
     )),
   });
 }

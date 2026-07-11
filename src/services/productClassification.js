@@ -2,7 +2,8 @@
 // hand-draw. Keep this list in sync with PRODUCT_CATEGORY_KEYWORDS and the
 // ProductShape3D switch there.
 export const PRODUCT_SHAPE_CATEGORIES = [
-  'chair', 'table', 'sofa', 'shelf', 'cabinet', 'monitor', 'lamp', 'plant', 'appliance', 'box',
+  'chair', 'table', 'sofa', 'shelf', 'cabinet', 'monitor', 'lamp', 'plant', 'appliance',
+  'bed', 'pillow', 'hairdryer', 'box',
 ];
 
 const MODEL = 'gemini-2.5-flash';
