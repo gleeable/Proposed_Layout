@@ -51,6 +51,19 @@ export function DesignCanvas() {
   const isPlacing = Boolean(placingCatalogItemId);
   const { ctrlRef } = useKeyboardModifiers();
 
+  // Defense in depth: every action that removes/relocates objects already
+  // clears selectedIds in the same store update, but if any path ever
+  // doesn't, a selectedId with no matching object would hand
+  // SelectionTransformer a dangling Konva node reference — drop it here too.
+  useEffect(() => {
+    if (selectedIds.length === 0) return;
+    const objectIds = new Set(objects.map((o) => o.id));
+    const stale = selectedIds.filter((id) => !objectIds.has(id));
+    if (stale.length > 0) {
+      setSelectedIds(selectedIds.filter((id) => objectIds.has(id)));
+    }
+  }, [objects, selectedIds, setSelectedIds]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return undefined;

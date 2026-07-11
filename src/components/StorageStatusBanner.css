@@ -1,0 +1,80 @@
+.storage-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 13px;
+  border-bottom: 1px solid #fde68a;
+}
+
+.storage-banner__message {
+  flex: 1;
+}
+
+.storage-banner__dismiss {
+  border: none;
+  background: transparent;
+  color: #92400e;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.storage-recovery__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.storage-recovery {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.storage-recovery h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.storage-recovery p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.storage-recovery__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.storage-recovery__actions button {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.storage-recovery__actions button:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.storage-recovery__actions button.is-danger {
+  color: #b91c1c;
+}

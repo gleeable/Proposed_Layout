@@ -9,6 +9,7 @@ import { DesignCanvas } from './components/canvas/DesignCanvas';
 import { CanvasErrorBoundary } from './components/canvas/CanvasErrorBoundary';
 import { Design3DView } from './components/canvas/Design3DView';
 import { ProductPanel } from './components/product/ProductPanel';
+import { StorageStatusBanner } from './components/StorageStatusBanner';
 import { useAppStore } from './store/useAppStore';
 
 function DesignTab() {
@@ -39,7 +40,12 @@ function DesignTab() {
 }
 
 function App() {
-  return <AppShell designContent={<DesignTab />} productContent={<ProductPanel />} />;
+  return (
+    <>
+      <StorageStatusBanner />
+      <AppShell designContent={<DesignTab />} productContent={<ProductPanel />} />
+    </>
+  );
 }
 
 export default App;

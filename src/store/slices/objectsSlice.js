@@ -1,5 +1,6 @@
 import { createId } from '../../domain/ids';
 import { getFacilityTemplate } from '../../domain/facilityCatalog';
+import { saveImageBlob, deleteImageBlob } from '../../services/imageStore';
 
 const PLACEMENT_STEP_M = 1;
 const PLACEMENT_GRID_COLS = 3;
@@ -131,6 +132,7 @@ export const createObjectsSlice = (set, get) => ({
 
     const newObject = buildProductObject(catalogItem, floorId, footprint.widthM / 2 + dx, footprint.depthM / 2 + dy);
     set({ objects: [...objects, newObject] });
+    if (newObject.imageDataUrl) saveImageBlob(newObject.id, newObject.imageDataUrl);
     return newObject.id;
   },
 
@@ -143,6 +145,7 @@ export const createObjectsSlice = (set, get) => ({
 
     const newObject = buildProductObject(catalogItem, floorId, xM, yM);
     set({ objects: [...objects, newObject] });
+    if (newObject.imageDataUrl) saveImageBlob(newObject.id, newObject.imageDataUrl);
     return newObject.id;
   },
 
@@ -161,6 +164,7 @@ export const createObjectsSlice = (set, get) => ({
       groupId: null,
     };
     set({ objects: [...objects, copy] });
+    if (copy.imageDataUrl) saveImageBlob(copy.id, copy.imageDataUrl);
     return copy.id;
   },
 
@@ -174,6 +178,7 @@ export const createObjectsSlice = (set, get) => ({
     set({
       objects: get().objects.map((o) => (o.id === id ? { ...o, ...patch } : o)),
     });
+    if (patch.imageDataUrl) saveImageBlob(id, patch.imageDataUrl);
   },
 
   updateObjectPosition: (id, x, y) => {
@@ -228,6 +233,7 @@ export const createObjectsSlice = (set, get) => ({
     }));
 
     set({ objects: [...objects, ...duplicates] });
+    duplicates.forEach((d) => { if (d.imageDataUrl) saveImageBlob(d.id, d.imageDataUrl); });
     return duplicates.map((d) => d.id);
   },
 
@@ -235,6 +241,7 @@ export const createObjectsSlice = (set, get) => ({
     const idSet = new Set(ids);
     const remaining = get().objects.filter((o) => !idSet.has(o.id));
     set({ objects: dropOrphanGroups(remaining), selectedIds: [] });
+    ids.forEach((id) => deleteImageBlob(id));
   },
 
   moveObjectsToFloor: (ids, floorId) => {

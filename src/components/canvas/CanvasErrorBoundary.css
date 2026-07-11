@@ -18,6 +18,13 @@
   margin: 0 0 8px;
 }
 
+.canvas-error-boundary__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+}
+
 .canvas-error-boundary button {
   padding: 7px 16px;
   border: none;
@@ -26,4 +33,14 @@
   color: white;
   font-size: 13px;
   cursor: pointer;
+}
+
+.canvas-error-boundary button.canvas-error-boundary__secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.canvas-error-boundary button.canvas-error-boundary__secondary.is-danger {
+  background: #fee2e2;
+  color: #b91c1c;
 }

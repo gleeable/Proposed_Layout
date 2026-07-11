@@ -12,15 +12,16 @@ const EXPECTED_CATEGORIES = [
   'management_office',
   'corridor',
   'utility_space',
+  'partition_wall',
 ];
 
 describe('facility catalog', () => {
-  test('contains all 10 required facility categories', () => {
+  test('contains all 11 required facility categories', () => {
     const categories = FACILITY_CATALOG.map((item) => item.category);
     EXPECTED_CATEGORIES.forEach((category) => {
       expect(categories).toContain(category);
     });
-    expect(FACILITY_CATALOG).toHaveLength(10);
+    expect(FACILITY_CATALOG).toHaveLength(11);
   });
 
   test('every facility has a positive default size', () => {
