@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { Billboard, useGLTF, useTexture } from '@react-three/drei';
+import { useGLTF, useTexture } from '@react-three/drei';
 
 function GltfProduct({ modelUrl, width, depth, height, onBoundsReady }) {
   const { scene } = useGLTF(modelUrl);
@@ -43,23 +43,38 @@ function GltfProduct({ modelUrl, width, depth, height, onBoundsReady }) {
   return <primitive object={cloned} scale={scale} position={[offset.x, offset.y, offset.z]} />;
 }
 
-function BillboardProduct({ imageUrl, width, depth, height, onBoundsReady }) {
+// A product photo has no real "back" — this fakes one by wrapping the same
+// photo around all four side faces of a box (BoxGeometry material order is
+// [+x, -x, +y, -y, +z, -z], so indices 0/1/4/5 are the four sides and 2/3
+// are the top/bottom caps). Unlike the old Billboard, this mesh is fixed in
+// space: orbiting the camera around it actually shows every side instead of
+// the image continuously rotating to face you.
+function TexturedBoxProduct({ imageUrl, width, depth, height, onBoundsReady }) {
   const texture = useTexture(imageUrl);
-  const planeWidth = Math.max(width, depth, 0.3);
-  const planeHeight = Math.max(height, 0.3);
+  const w = Math.max(width, 0.1);
+  const d = Math.max(depth, 0.1);
+  const h = Math.max(height, 0.1);
+
+  const materials = useMemo(() => {
+    const side = new THREE.MeshStandardMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.2,
+      side: THREE.DoubleSide,
+    });
+    const cap = new THREE.MeshStandardMaterial({ color: '#e5e7eb' });
+    return [side, side, cap, cap, side, side];
+  }, [texture]);
 
   useEffect(() => {
-    const radius = Math.max(Math.sqrt(planeWidth ** 2 + planeHeight ** 2) / 2, 0.3);
-    onBoundsReady({ center: new THREE.Vector3(0, planeHeight / 2, 0), radius });
-  }, [planeWidth, planeHeight, onBoundsReady]);
+    const radius = Math.max(new THREE.Vector3(w, h, d).length() / 2, 0.3);
+    onBoundsReady({ center: new THREE.Vector3(0, h / 2, 0), radius });
+  }, [w, h, d, onBoundsReady]);
 
   return (
-    <Billboard position={[0, planeHeight / 2, 0]}>
-      <mesh castShadow>
-        <planeGeometry args={[planeWidth, planeHeight]} />
-        <meshStandardMaterial map={texture} transparent alphaTest={0.2} side={THREE.DoubleSide} depthWrite={false} />
-      </mesh>
-    </Billboard>
+    <mesh position={[0, h / 2, 0]} material={materials} castShadow>
+      <boxGeometry args={[w, h, d]} />
+    </mesh>
   );
 }
 
@@ -105,7 +120,7 @@ export function ProductLoader({ product, onBoundsReady }) {
   if (product.imageDataUrl) {
     return (
       <Suspense fallback={null}>
-        <BillboardProduct
+        <TexturedBoxProduct
           imageUrl={product.imageDataUrl}
           width={width}
           depth={depth}
