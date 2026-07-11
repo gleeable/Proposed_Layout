@@ -1,8 +1,9 @@
 import { createId } from './ids';
 
 const FOOTPRINT_ASPECT_RATIO = 1.4;
-const MIN_FOOTPRINT_WIDTH_M = 6;
-const MIN_FOOTPRINT_DEPTH_M = 4;
+export const MIN_FOOTPRINT_WIDTH_M = 6;
+export const MIN_FOOTPRINT_DEPTH_M = 4;
+export const MIN_BUILDING_HEIGHT_M = 2.2;
 const MIN_FLOOR_COUNT = 1;
 
 export function deriveFootprintArea(siteAreaM2, bcrPercent) {

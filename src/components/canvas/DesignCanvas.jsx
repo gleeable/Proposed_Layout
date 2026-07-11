@@ -3,6 +3,8 @@ import { Stage, Layer } from 'react-konva';
 import { useAppStore } from '../../store/useAppStore';
 import { computeFitScale, computeFootprintOffset } from './canvasGeometry';
 import { FootprintOutline } from './FootprintOutline';
+import { FootprintDimensions } from './FootprintDimensions';
+import { FootprintResizeHandles } from './FootprintResizeHandles';
 import { PlacedObjectShape } from './PlacedObjectShape';
 import { PlacementPreview } from './PlacementPreview';
 import { SelectionTransformer } from './SelectionTransformer';
@@ -48,6 +50,8 @@ export function DesignCanvas() {
   const pushHistorySnapshot = useAppStore((s) => s.pushHistorySnapshot);
   const duplicateObjectAt = useAppStore((s) => s.duplicateObjectAt);
   const placingCatalogItemId = useAppStore((s) => s.placingCatalogItemId);
+  const isEditingLayout = useAppStore((s) => s.isEditingLayout);
+  const resizeFootprint = useAppStore((s) => s.resizeFootprint);
 
   const isPlacing = Boolean(placingCatalogItemId);
   const { ctrlRef } = useKeyboardModifiers();
@@ -223,6 +227,23 @@ export function DesignCanvas() {
               offsetX={offsetX}
               offsetY={offsetY}
             />
+            <FootprintDimensions
+              footprint={building.footprint}
+              heightM={building.heightM}
+              floorCount={building.floorCount}
+              scale={scale}
+              offsetX={offsetX}
+              offsetY={offsetY}
+            />
+            {isEditingLayout && (
+              <FootprintResizeHandles
+                footprint={building.footprint}
+                scale={scale}
+                offsetX={offsetX}
+                offsetY={offsetY}
+                onResize={resizeFootprint}
+              />
+            )}
             {floorObjects.map((object) => (
               <PlacedObjectShape
                 key={object.id}

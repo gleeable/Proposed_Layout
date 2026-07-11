@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import './App.css';
 import { AppShell } from './components/layout/AppShell';
 import { BuildingSetupForm } from './components/building/BuildingSetupForm';
@@ -6,6 +6,7 @@ import { FloorPanel } from './components/floorPanel/FloorPanel';
 import { Palette } from './components/canvas/Palette';
 import { CanvasToolbar } from './components/canvas/CanvasToolbar';
 import { CanvasViewToggle } from './components/canvas/CanvasViewToggle';
+import { LayoutEditBar } from './components/canvas/LayoutEditBar';
 import { DesignCanvas } from './components/canvas/DesignCanvas';
 import { CanvasErrorBoundary } from './components/canvas/CanvasErrorBoundary';
 import { Design3DView } from './components/canvas/Design3DView';
@@ -23,6 +24,18 @@ function DesignTab({ design3DRef }) {
   const building = useAppStore((s) => s.building);
   const canvasViewMode = useAppStore((s) => s.canvasViewMode);
 
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key !== 'F7') return;
+      const tag = e.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      e.preventDefault(); // Firefox otherwise prompts to toggle caret browsing
+      useAppStore.getState().toggleEditingLayout();
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   if (!building) {
     return <BuildingSetupForm />;
   }
@@ -31,6 +44,7 @@ function DesignTab({ design3DRef }) {
     <div className="design-layout">
       <Palette />
       <div className="design-layout__main">
+        <LayoutEditBar />
         <CanvasViewToggle />
         <CanvasToolbar />
         {canvasViewMode === '3d' ? (

@@ -3,10 +3,19 @@ export const createUiSlice = (set, get) => ({
   selectedIds: [],
   canvasViewMode: '2d',
   placingCatalogItemId: null,
+  isEditingLayout: false,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   setCanvasViewMode: (mode) => set({ canvasViewMode: mode }),
+
+  // F7 toggles this. Turning it on also forces the 2D plan view, since the
+  // resize handles/dimension drag only make sense there — turning it off
+  // leaves whatever view the user is already on alone.
+  toggleEditingLayout: () => set((state) => {
+    const next = !state.isEditingLayout;
+    return { isEditingLayout: next, canvasViewMode: next ? '2d' : state.canvasViewMode };
+  }),
 
   startPlacingProduct: (catalogItemId) => {
     set((state) => ({
