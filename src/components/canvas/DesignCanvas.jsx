@@ -9,12 +9,16 @@ import { GroupDragProxy } from './GroupDragProxy';
 import { ObjectDetailModal } from './ObjectDetailModal';
 import './DesignCanvas.css';
 
+const MIN_ZOOM = 0.3;
+const MAX_ZOOM = 4;
+
 export function DesignCanvas() {
   const containerRef = useRef(null);
   const nodesMapRef = useRef(new Map());
   const [, bumpNodeVersion] = useState(0);
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [detailObjectId, setDetailObjectId] = useState(null);
+  const [zoom, setZoom] = useState(1);
 
   const building = useAppStore((s) => s.building);
   const activeFloorId = useAppStore((s) => s.activeFloorId);
@@ -37,6 +41,21 @@ export function DesignCanvas() {
     });
     observer.observe(el);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return undefined;
+    function handleWheel(e) {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      setZoom((z) => {
+        const next = z * (1 - e.deltaY * 0.001);
+        return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
+      });
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
   }, []);
 
   useEffect(() => {
@@ -84,7 +103,7 @@ export function DesignCanvas() {
 
   if (!building) return null;
 
-  const scale = computeFitScale(building.footprint, stageSize.width, stageSize.height);
+  const scale = computeFitScale(building.footprint, stageSize.width, stageSize.height) * zoom;
   const { offsetX, offsetY } = computeFootprintOffset(
     building.footprint,
     scale,

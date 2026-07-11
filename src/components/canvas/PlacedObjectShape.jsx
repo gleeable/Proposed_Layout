@@ -34,11 +34,9 @@ export function PlacedObjectShape({
     evt.cancelBubble = true;
     const additive = Boolean(evt.evt.shiftKey || evt.evt.ctrlKey || evt.evt.metaKey);
     onSelect(id, additive);
-  }
-
-  function handleOpenDetails(evt) {
-    evt.cancelBubble = true;
-    onOpenDetails(id);
+    if (!additive) {
+      onOpenDetails(id);
+    }
   }
 
   function handleDragEnd(evt) {
@@ -57,8 +55,6 @@ export function PlacedObjectShape({
       draggable={draggable}
       onClick={handleSelect}
       onTap={handleSelect}
-      onDblClick={handleOpenDetails}
-      onDblTap={handleOpenDetails}
       onDragEnd={handleDragEnd}
     >
       <Group scaleX={flipScaleX} scaleY={flipScaleY}>
