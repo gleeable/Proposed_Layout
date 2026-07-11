@@ -67,3 +67,15 @@
   color: #9ca3af;
   margin: 0 0 8px;
 }
+
+.palette__item.is-placing {
+  background: #eef2ff;
+  border-color: #4338ca;
+  box-shadow: 0 0 0 1px #4338ca;
+}
+
+.palette__placing-hint {
+  font-size: 11px;
+  color: #4338ca;
+  margin: 0 0 8px;
+}

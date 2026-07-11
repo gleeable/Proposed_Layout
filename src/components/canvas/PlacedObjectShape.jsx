@@ -10,8 +10,10 @@ export function PlacedObjectShape({
   offsetY,
   isSelected,
   draggable,
+  placementModeActive,
   registerNodeRef,
   onSelect,
+  onDragStart,
   onDragEnd,
   onOpenDetails,
 }) {
@@ -31,6 +33,9 @@ export function PlacedObjectShape({
   const flipScaleY = flipY ? -1 : 1;
 
   function handleSelect(evt) {
+    // While placing a new product, clicks should bubble up to the stage and
+    // confirm the placement instead of selecting whatever is underneath.
+    if (placementModeActive) return;
     evt.cancelBubble = true;
     const additive = Boolean(evt.evt.shiftKey || evt.evt.ctrlKey || evt.evt.metaKey);
     onSelect(id, additive);
@@ -39,11 +44,15 @@ export function PlacedObjectShape({
     }
   }
 
+  function handleDragStart(evt) {
+    onDragStart?.(id, object, evt);
+  }
+
   function handleDragEnd(evt) {
     const node = evt.target;
     const xMeters = stagePxToMeters(node.x() - offsetX, scale);
     const yMeters = stagePxToMeters(node.y() - offsetY, scale);
-    onDragEnd(id, xMeters, yMeters);
+    onDragEnd(id, object, xMeters, yMeters);
   }
 
   return (
@@ -52,9 +61,10 @@ export function PlacedObjectShape({
       x={pxX}
       y={pxY}
       rotation={rotation}
-      draggable={draggable}
+      draggable={draggable && !placementModeActive}
       onClick={handleSelect}
       onTap={handleSelect}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <Group scaleX={flipScaleX} scaleY={flipScaleY}>

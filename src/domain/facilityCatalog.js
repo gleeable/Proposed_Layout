@@ -9,6 +9,7 @@ export const FACILITY_CATALOG = [
   { category: 'management_office', label: '관리실', widthM: 3, depthM: 3, fill: '#A78BFA' },
   { category: 'corridor', label: '공용복도', widthM: 6, depthM: 1.5, fill: '#D1D5DB' },
   { category: 'utility_space', label: '기본 설비 공간', widthM: 2, depthM: 2, fill: '#34D399' },
+  { category: 'partition_wall', label: '', widthM: 1, depthM: 1, fill: '#9CA3AF' },
 ];
 
 export function getFacilityTemplate(category) {

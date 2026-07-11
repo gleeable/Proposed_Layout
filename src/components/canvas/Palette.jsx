@@ -6,9 +6,10 @@ export function Palette() {
   const activeFloorId = useAppStore((s) => s.activeFloorId);
   const addFacility = useAppStore((s) => s.addFacility);
   const addGeneric = useAppStore((s) => s.addGeneric);
-  const addCatalogProduct = useAppStore((s) => s.addCatalogProduct);
   const catalogItems = useAppStore((s) => s.catalogItems);
   const selectObject = useAppStore((s) => s.selectObject);
+  const placingCatalogItemId = useAppStore((s) => s.placingCatalogItemId);
+  const startPlacingProduct = useAppStore((s) => s.startPlacingProduct);
 
   function handleAddFacility(category) {
     if (!activeFloorId) return;
@@ -24,8 +25,7 @@ export function Palette() {
 
   function handleAddCatalogProduct(catalogItemId) {
     if (!activeFloorId) return;
-    const id = addCatalogProduct(catalogItemId, activeFloorId);
-    if (id) selectObject(id);
+    startPlacingProduct(catalogItemId);
   }
 
   return (
@@ -53,12 +53,15 @@ export function Palette() {
 
       <h2>내 제품</h2>
       {catalogItems.length === 0 && <p className="palette__empty">제품 탭에서 먼저 등록해주세요.</p>}
+      {placingCatalogItemId && (
+        <p className="palette__placing-hint">레이아웃을 클릭해 배치하세요 (Esc로 취소)</p>
+      )}
       <div className="palette__grid">
         {catalogItems.map((item) => (
           <button
             key={item.id}
             type="button"
-            className="palette__item"
+            className={`palette__item ${placingCatalogItemId === item.id ? 'is-placing' : ''}`}
             onClick={() => handleAddCatalogProduct(item.id)}
           >
             {item.imageDataUrl ? (

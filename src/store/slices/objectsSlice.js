@@ -17,6 +17,35 @@ function placementOffset(existingCountOnFloor) {
   };
 }
 
+function buildProductObject(catalogItem, floorId, xM, yM) {
+  return {
+    id: createId(),
+    floorId,
+    kind: 'product',
+    category: 'custom',
+    label: catalogItem.label,
+    fill: '#93C5FD',
+    imageDataUrl: catalogItem.imageDataUrl,
+    modelUrl: catalogItem.modelUrl || null,
+    x: xM,
+    y: yM,
+    width: catalogItem.width || DEFAULT_PRODUCT_SIZE_M,
+    height: catalogItem.height || DEFAULT_PRODUCT_SIZE_M,
+    verticalHeightMm: catalogItem.verticalHeightMm || DEFAULT_VERTICAL_HEIGHT_MM,
+    brand: catalogItem.brand || '',
+    material: catalogItem.material || '',
+    color: catalogItem.color || '',
+    manufacturer: catalogItem.manufacturer || '',
+    link: catalogItem.link || '',
+    memo: catalogItem.memo || '',
+    rotation: 0,
+    flipX: false,
+    flipY: false,
+    locked: false,
+    groupId: null,
+  };
+}
+
 function dropOrphanGroups(objects) {
   const counts = objects.reduce((acc, o) => {
     if (!o.groupId) return acc;
@@ -100,34 +129,39 @@ export const createObjectsSlice = (set, get) => ({
     const existingCount = objects.filter((o) => o.floorId === floorId).length;
     const { dx, dy } = placementOffset(existingCount);
 
-    const newObject = {
+    const newObject = buildProductObject(catalogItem, floorId, footprint.widthM / 2 + dx, footprint.depthM / 2 + dy);
+    set({ objects: [...objects, newObject] });
+    return newObject.id;
+  },
+
+  // Same as addCatalogProduct, but drops the product at an explicit world position
+  // (used by click-to-place: the caller already resolved the canvas click to world coords).
+  placeCatalogProductAt: (catalogItemId, floorId, xM, yM) => {
+    const { objects, catalogItems } = get();
+    const catalogItem = catalogItems.find((item) => item.id === catalogItemId);
+    if (!catalogItem) return null;
+
+    const newObject = buildProductObject(catalogItem, floorId, xM, yM);
+    set({ objects: [...objects, newObject] });
+    return newObject.id;
+  },
+
+  // Clones a placed object (Ctrl+drag copy) at an explicit world position with a fresh id.
+  duplicateObjectAt: (id, xM, yM) => {
+    const { objects } = get();
+    const source = objects.find((o) => o.id === id);
+    if (!source) return null;
+
+    const copy = {
+      ...source,
       id: createId(),
-      floorId,
-      kind: 'product',
-      category: 'custom',
-      label: catalogItem.label,
-      fill: '#93C5FD',
-      imageDataUrl: catalogItem.imageDataUrl,
-      modelUrl: catalogItem.modelUrl || null,
-      x: footprint.widthM / 2 + dx,
-      y: footprint.depthM / 2 + dy,
-      width: catalogItem.width || DEFAULT_PRODUCT_SIZE_M,
-      height: catalogItem.height || DEFAULT_PRODUCT_SIZE_M,
-      verticalHeightMm: catalogItem.verticalHeightMm || DEFAULT_VERTICAL_HEIGHT_MM,
-      brand: catalogItem.brand || '',
-      material: catalogItem.material || '',
-      color: catalogItem.color || '',
-      manufacturer: catalogItem.manufacturer || '',
-      link: catalogItem.link || '',
-      memo: catalogItem.memo || '',
-      rotation: 0,
-      flipX: false,
-      flipY: false,
+      x: xM,
+      y: yM,
       locked: false,
       groupId: null,
     };
-    set({ objects: [...objects, newObject] });
-    return newObject.id;
+    set({ objects: [...objects, copy] });
+    return copy.id;
   },
 
   updateObjectTransform: (id, transform) => {

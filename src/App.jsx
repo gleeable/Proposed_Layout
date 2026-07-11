@@ -6,6 +6,7 @@ import { Palette } from './components/canvas/Palette';
 import { CanvasToolbar } from './components/canvas/CanvasToolbar';
 import { CanvasViewToggle } from './components/canvas/CanvasViewToggle';
 import { DesignCanvas } from './components/canvas/DesignCanvas';
+import { CanvasErrorBoundary } from './components/canvas/CanvasErrorBoundary';
 import { Design3DView } from './components/canvas/Design3DView';
 import { ProductPanel } from './components/product/ProductPanel';
 import { useAppStore } from './store/useAppStore';
@@ -24,7 +25,13 @@ function DesignTab() {
       <div className="design-layout__main">
         <CanvasViewToggle />
         <CanvasToolbar />
-        {canvasViewMode === '3d' ? <Design3DView /> : <DesignCanvas />}
+        {canvasViewMode === '3d' ? (
+          <Design3DView />
+        ) : (
+          <CanvasErrorBoundary>
+            <DesignCanvas />
+          </CanvasErrorBoundary>
+        )}
       </div>
       <FloorPanel />
     </div>

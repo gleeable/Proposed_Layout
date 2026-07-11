@@ -2,10 +2,19 @@ export const createUiSlice = (set, get) => ({
   activeTab: 'design',
   selectedIds: [],
   canvasViewMode: '2d',
+  placingCatalogItemId: null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   setCanvasViewMode: (mode) => set({ canvasViewMode: mode }),
+
+  startPlacingProduct: (catalogItemId) => {
+    set((state) => ({
+      placingCatalogItemId: state.placingCatalogItemId === catalogItemId ? null : catalogItemId,
+    }));
+  },
+
+  cancelPlacingProduct: () => set({ placingCatalogItemId: null }),
 
   clearSelection: () => set({ selectedIds: [] }),
 
