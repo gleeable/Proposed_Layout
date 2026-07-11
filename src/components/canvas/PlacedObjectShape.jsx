@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Group, Rect, Text, Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
 import { metersToStagePx, stagePxToMeters } from './canvasGeometry';
+import { FacilityIcon, SHAPED_FACILITY_CATEGORIES } from './FacilityIcon';
 
 export function PlacedObjectShape({
   object,
@@ -17,9 +18,10 @@ export function PlacedObjectShape({
   onDragEnd,
   onOpenDetails,
 }) {
-  const { id, x, y, width, height, rotation, flipX, flipY, fill, label, imageDataUrl, kind } = object;
+  const { id, x, y, width, height, rotation, flipX, flipY, fill, label, imageDataUrl, kind, category } = object;
   const [image] = useImage(imageDataUrl || '');
   const showLabel = kind !== 'product';
+  const hasShapedIcon = !imageDataUrl && SHAPED_FACILITY_CATEGORIES.has(category);
 
   // Must stay referentially stable across renders — a fresh closure here makes React
   // detach/reattach the ref every render, and registerNodeRef's setState would loop forever.
@@ -78,6 +80,8 @@ export function PlacedObjectShape({
             stroke={isSelected ? '#4338ca' : '#9ca3af'}
             strokeWidth={isSelected ? 2 : 1}
           />
+        ) : hasShapedIcon ? (
+          <FacilityIcon category={category} pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />
         ) : (
           <Rect
             x={-pxW / 2}

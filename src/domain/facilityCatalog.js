@@ -10,6 +10,10 @@ export const FACILITY_CATALOG = [
   { category: 'corridor', label: '공용복도', widthM: 6, depthM: 1.5, fill: '#D1D5DB' },
   { category: 'utility_space', label: '기본 설비 공간', widthM: 2, depthM: 2, fill: '#34D399' },
   { category: 'partition_wall', label: '', widthM: 1, depthM: 1, fill: '#9CA3AF' },
+  { category: 'tree', label: '나무', widthM: 1.2, depthM: 1.2, fill: '#4ADE80' },
+  { category: 'table', label: '테이블', widthM: 1.2, depthM: 0.8, fill: '#D6A77A' },
+  { category: 'chair', label: '의자', widthM: 0.5, depthM: 0.5, fill: '#E7E5E4' },
+  { category: 'door', label: '문', widthM: 0.9, depthM: 0.9, fill: '#D6D3D1' },
 ];
 
 export function getFacilityTemplate(category) {
