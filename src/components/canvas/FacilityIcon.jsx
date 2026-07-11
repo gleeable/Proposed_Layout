@@ -3,7 +3,9 @@ import { Arc, Arrow, Circle, Line, Rect } from 'react-konva';
 // Categories with a recognizable top-down floor-plan symbol instead of a
 // plain colored rectangle. Anything not in this set falls back to the
 // generic Rect/Image rendering in PlacedObjectShape/PlacementPreview.
-export const SHAPED_FACILITY_CATEGORIES = new Set(['stairs', 'tree', 'table', 'chair', 'door']);
+export const SHAPED_FACILITY_CATEGORIES = new Set([
+  'stairs', 'tree', 'table', 'chair', 'door', 'window', 'bed', 'blanket', 'pillow',
+]);
 
 function StairsIcon({ pxW, pxH, fill, isSelected }) {
   const halfW = pxW / 2;
@@ -152,6 +154,111 @@ function DoorIcon({ pxW, pxH, isSelected }) {
   );
 }
 
+// Top-down architectural window symbol: the wall-opening line plus the
+// double "glass" lines running through it, no swing arc (windows don't open
+// like doors do).
+function WindowIcon({ pxW, pxH, fill, isSelected }) {
+  const halfW = pxW / 2;
+  const halfH = pxH / 2;
+  return (
+    <>
+      <Rect
+        x={-halfW}
+        y={-halfH}
+        width={pxW}
+        height={pxH}
+        fill={fill}
+        stroke={isSelected ? '#4338ca' : '#1D4ED8'}
+        strokeWidth={isSelected ? 2 : 1}
+      />
+      <Line points={[-halfW, -halfH / 3, halfW, -halfH / 3]} stroke="#1D4ED8" strokeWidth={1} listening={false} />
+      <Line points={[-halfW, halfH / 3, halfW, halfH / 3]} stroke="#1D4ED8" strokeWidth={1} listening={false} />
+    </>
+  );
+}
+
+// Mattress rectangle + a headboard stripe + two pillow bumps near it.
+function BedIcon({ pxW, pxH, fill, isSelected }) {
+  const halfW = pxW / 2;
+  const halfH = pxH / 2;
+  const headboardThickness = pxH * 0.08;
+  const pillowWidth = pxW * 0.36;
+  const pillowHeight = pxH * 0.16;
+  return (
+    <>
+      <Rect
+        x={-halfW}
+        y={-halfH}
+        width={pxW}
+        height={pxH}
+        fill={fill}
+        stroke={isSelected ? '#4338ca' : '#A8A29E'}
+        strokeWidth={isSelected ? 2 : 1}
+        cornerRadius={3}
+      />
+      <Rect x={-halfW} y={-halfH} width={pxW} height={headboardThickness} fill="#78716C" cornerRadius={[3, 3, 0, 0]} listening={false} />
+      {[-1, 1].map((sx) => (
+        <Rect
+          key={sx}
+          x={sx * (pillowWidth / 2 + pxW * 0.06) - pillowWidth / 2}
+          y={-halfH + headboardThickness + pxH * 0.05}
+          width={pillowWidth}
+          height={pillowHeight}
+          fill="#FAFAF9"
+          stroke="#D6D3D1"
+          strokeWidth={1}
+          cornerRadius={4}
+          listening={false}
+        />
+      ))}
+    </>
+  );
+}
+
+// A soft rounded rect with a center seam, like a folded/laid-out duvet.
+function BlanketIcon({ pxW, pxH, fill, isSelected }) {
+  const halfW = pxW / 2;
+  const halfH = pxH / 2;
+  return (
+    <>
+      <Rect
+        x={-halfW}
+        y={-halfH}
+        width={pxW}
+        height={pxH}
+        fill={fill}
+        stroke={isSelected ? '#4338ca' : '#93C5FD'}
+        strokeWidth={isSelected ? 2 : 1}
+        cornerRadius={10}
+      />
+      <Line points={[-halfW * 0.6, -halfH, -halfW * 0.6, halfH]} stroke="#93C5FD" strokeWidth={1} opacity={0.6} listening={false} />
+      <Line points={[0, -halfH, 0, halfH]} stroke="#93C5FD" strokeWidth={1} opacity={0.6} listening={false} />
+      <Line points={[halfW * 0.6, -halfH, halfW * 0.6, halfH]} stroke="#93C5FD" strokeWidth={1} opacity={0.6} listening={false} />
+    </>
+  );
+}
+
+// Squashed oval with a center seam line, like a pillow seen from above.
+function PillowIcon({ pxW, pxH, fill, isSelected }) {
+  const halfW = pxW / 2;
+  const halfH = pxH / 2;
+  return (
+    <>
+      <Rect
+        x={-halfW}
+        y={-halfH}
+        width={pxW}
+        height={pxH}
+        fill={fill}
+        stroke={isSelected ? '#4338ca' : '#D6D3D1'}
+        strokeWidth={isSelected ? 2 : 1}
+        cornerRadius={Math.min(pxW, pxH) / 2}
+      />
+      <Line points={[-halfW * 0.7, 0, halfW * 0.7, 0]} stroke="#D6D3D1" strokeWidth={1} opacity={0.7} listening={false} />
+    </>
+  );
+}
+
 export function FacilityIcon({ category, pxW, pxH, fill, isSelected }) {
   switch (category) {
     case 'stairs':
@@ -164,6 +271,14 @@ export function FacilityIcon({ category, pxW, pxH, fill, isSelected }) {
       return <ChairIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
     case 'door':
       return <DoorIcon pxW={pxW} pxH={pxH} isSelected={isSelected} />;
+    case 'window':
+      return <WindowIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
+    case 'bed':
+      return <BedIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
+    case 'blanket':
+      return <BlanketIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
+    case 'pillow':
+      return <PillowIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
     default:
       return null;
   }

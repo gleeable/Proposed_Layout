@@ -17,7 +17,9 @@ const PERSON_HIDE_DELAY_S = 2; // hide the avatar after this long with no arrow 
 const CHAIR_SEAT_HEIGHT_RATIO = 0.5; // must match ChairShape3D's own seatHeight = height * 0.5
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
-const SHAPED_3D_CATEGORIES = new Set(['stairs', 'tree', 'table', 'chair', 'door']);
+const SHAPED_3D_CATEGORIES = new Set([
+  'stairs', 'tree', 'table', 'chair', 'door', 'window', 'bed', 'blanket', 'pillow',
+]);
 
 // Guesses a hand-drawn shape category from a product's free-text name, since
 // registered products have no fixed category the way facilities do. Falls
@@ -357,6 +359,46 @@ function DoorShape3D({ width, depth, height }) {
   );
 }
 
+// A wall-mounted pane: an outer frame box, an inset semi-transparent glass
+// slab, and a thin mullion bar splitting it — reads as a window, not a wall.
+function WindowShape3D({ width, depth, height, fill }) {
+  const frameThickness = Math.max(Math.min(width, height) * 0.06, 0.02);
+  return (
+    <group>
+      <mesh position={[0, height / 2, 0]}>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial color="#E5E7EB" />
+      </mesh>
+      <mesh position={[0, height / 2, 0]}>
+        <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), Math.max(height - frameThickness * 2, 0.02), depth * 0.5]} />
+        <meshStandardMaterial color={fill} transparent opacity={0.55} />
+      </mesh>
+      <mesh position={[0, height / 2, 0]}>
+        <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), frameThickness * 0.6, depth * 0.7]} />
+        <meshStandardMaterial color="#E5E7EB" />
+      </mesh>
+    </group>
+  );
+}
+
+// A flat slab plus a raised strip near one edge, like a duvet with its top
+// corner turned down.
+function BlanketShape3D({ width, depth, height, fill }) {
+  const foldDepth = depth * 0.22;
+  return (
+    <group>
+      <mesh position={[0, height / 2, 0]}>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, height * 1.4, -depth / 2 + foldDepth / 2]}>
+        <boxGeometry args={[width * 0.98, height * 0.8, foldDepth]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+    </group>
+  );
+}
+
 function SofaShape3D({ width, depth, height, fill }) {
   const armWidth = Math.min(width * 0.12, 0.2);
   const legHeight = Math.max(height * 0.1, 0.08);
@@ -625,6 +667,14 @@ function FacilityShape3D({ category, width, depth, height, fill }) {
       return <ChairShape3D width={width} depth={depth} height={height} fill={fill} />;
     case 'door':
       return <DoorShape3D width={width} depth={depth} height={height} />;
+    case 'window':
+      return <WindowShape3D width={width} depth={depth} height={height} fill={fill} />;
+    case 'bed':
+      return <BedShape3D width={width} depth={depth} height={height} fill={fill} />;
+    case 'blanket':
+      return <BlanketShape3D width={width} depth={depth} height={height} fill={fill} />;
+    case 'pillow':
+      return <PillowShape3D width={width} depth={depth} height={height} fill={fill} />;
     default:
       return <PlainBox width={width} depth={depth} height={height} fill={fill} />;
   }
