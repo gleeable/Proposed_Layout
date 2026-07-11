@@ -185,11 +185,15 @@ async function handleImageGenerationRequest(request, response, apiKey) {
       return;
     }
 
-    const parts = googleBody?.candidates?.[0]?.content?.parts || [];
+    const candidate = googleBody?.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
     const imagePart = parts.find((part) => part.inlineData?.data);
 
     if (!imagePart) {
-      sendJson(response, 502, { error: 'Google API response did not include image data.' });
+      const textPart = parts.find((part) => part.text)?.text;
+      const reason = textPart || candidate?.finishReason || googleBody?.promptFeedback?.blockReason;
+      const detail = reason ? `: ${reason}` : '.';
+      sendJson(response, 502, { error: `Google API response did not include image data${detail}` });
       return;
     }
 

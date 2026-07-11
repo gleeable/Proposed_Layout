@@ -49,11 +49,15 @@ async function handleGenerateProductImage(request, env) {
     );
   }
 
-  const parts = googleBody?.candidates?.[0]?.content?.parts || [];
+  const candidate = googleBody?.candidates?.[0];
+  const parts = candidate?.content?.parts || [];
   const imagePart = parts.find((part) => part.inlineData?.data);
 
   if (!imagePart) {
-    return json({ error: 'Google API response did not include image data.' }, 502);
+    const textPart = parts.find((part) => part.text)?.text;
+    const reason = textPart || candidate?.finishReason || googleBody?.promptFeedback?.blockReason;
+    const detail = reason ? `: ${reason}` : '.';
+    return json({ error: `Google API response did not include image data${detail}` }, 502);
   }
 
   return json({
