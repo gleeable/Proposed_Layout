@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import { Stage, Layer } from 'react-konva';
+import { Stage, Layer, Rect } from 'react-konva';
 import { useAppStore } from '../../store/useAppStore';
 import { computeFitScale, computeFootprintOffset } from './canvasGeometry';
 import { FootprintOutline } from './FootprintOutline';
@@ -10,8 +10,10 @@ import { PlacementPreview } from './PlacementPreview';
 import { SelectionTransformer } from './SelectionTransformer';
 import { GroupDragProxy } from './GroupDragProxy';
 import { ObjectDetailModal } from './ObjectDetailModal';
+import { SelectionActionMenu } from './SelectionActionMenu';
 import { ProductViewerModal } from '../productViewer/ProductViewerModal';
 import { useCanvasViewport } from './useCanvasViewport';
+import { useMarqueeSelection } from './useMarqueeSelection';
 import { useProductPlacement } from './useProductPlacement';
 import { useProductCopyDrag } from './useProductCopyDrag';
 import { useKeyboardModifiers } from './useKeyboardModifiers';
@@ -35,6 +37,7 @@ export function DesignCanvas() {
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [detailObjectId, setDetailObjectId] = useState(null);
   const [viewerObjectId, setViewerObjectId] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
 
   const building = useAppStore((s) => s.building);
   const activeFloorId = useAppStore((s) => s.activeFloorId);
@@ -50,7 +53,6 @@ export function DesignCanvas() {
   const pushHistorySnapshot = useAppStore((s) => s.pushHistorySnapshot);
   const duplicateObjectAt = useAppStore((s) => s.duplicateObjectAt);
   const duplicateSelectionBy = useAppStore((s) => s.duplicateSelectionBy);
-  const groupObjects = useAppStore((s) => s.groupObjects);
   const placingCatalogItemId = useAppStore((s) => s.placingCatalogItemId);
   const isEditingLayout = useAppStore((s) => s.isEditingLayout);
   const resizeFootprint = useAppStore((s) => s.resizeFootprint);
@@ -87,7 +89,6 @@ export function DesignCanvas() {
   const viewport = useCanvasViewport({
     containerRef,
     disabled: isPlacing,
-    onEmptyClick: clearSelection,
   });
 
   useEffect(() => {
@@ -166,6 +167,14 @@ export function DesignCanvas() {
     return result;
   }, [objects, activeFloorId]);
 
+  const marquee = useMarqueeSelection({
+    disabled: isPlacing,
+    objects: floorObjects,
+    getNode,
+    setSelectedIds,
+    clearSelection,
+  });
+
   // A safe fallback keeps every hook below unconditional (Rules of Hooks) even
   // before a building exists; the actual render bails out further down.
   const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
@@ -205,24 +214,24 @@ export function DesignCanvas() {
     setViewerObjectId(id);
   }
 
-  function handleObjectContextMenu(id) {
-    // Right-clicking a member of an existing multi-selection groups the
-    // whole selection; right-clicking a lone/ungrouped object is a no-op
-    // (native context menu is already suppressed in PlacedObjectShape).
+  function handleObjectContextMenu(id, evt) {
+    // Right-clicking a member of an existing multi-selection opens the bulk
+    // action menu; right-clicking a lone/ungrouped object is a no-op (native
+    // context menu is already suppressed in PlacedObjectShape).
     if (selectedIds.length >= 2 && selectedIds.includes(id)) {
-      groupObjects(selectedIds);
+      setContextMenu({ x: evt.clientX, y: evt.clientY, ids: selectedIds });
     }
   }
 
   function handleStagePointerMove(e) {
     placement.handleStagePointerMove(e);
-    viewport.handleStagePointerMove(e);
+    marquee.handleStagePointerMove(e);
   }
 
   const containerClassName = [
     'design-canvas',
     isPlacing ? 'is-placing' : '',
-    viewport.isPanning ? 'is-panning' : '',
+    marquee.marqueeRect ? 'is-marquee-selecting' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -235,10 +244,10 @@ export function DesignCanvas() {
         <Stage
           width={stageSize.width}
           height={stageSize.height}
-          onPointerDown={viewport.handleStagePointerDown}
+          onPointerDown={marquee.handleStagePointerDown}
           onPointerMove={handleStagePointerMove}
-          onPointerUp={viewport.handleStagePointerUp}
-          onPointerCancel={viewport.handleStagePointerCancel}
+          onPointerUp={marquee.handleStagePointerUp}
+          onPointerCancel={marquee.handleStagePointerCancel}
           onClick={placement.handleStageClick}
         >
           <Layer>
@@ -309,8 +318,20 @@ export function DesignCanvas() {
               onDuplicateBy={duplicateSelectionBy}
               setSelectedIds={setSelectedIds}
               ctrlRef={ctrlRef}
-              onContextMenu={() => groupObjects(selectedIds)}
+              onContextMenu={(evt) => setContextMenu({ x: evt.clientX, y: evt.clientY, ids: selectedIds })}
             />
+            {marquee.marqueeRect && (
+              <Rect
+                x={marquee.marqueeRect.x}
+                y={marquee.marqueeRect.y}
+                width={marquee.marqueeRect.width}
+                height={marquee.marqueeRect.height}
+                stroke="#2563eb"
+                dash={[4, 4]}
+                fill="rgba(37,99,235,0.08)"
+                listening={false}
+              />
+            )}
           </Layer>
         </Stage>
       )}
@@ -326,6 +347,14 @@ export function DesignCanvas() {
           product={viewerObject}
           onUpdate={(patch) => updateObjectDetails(viewerObject.id, patch)}
           onClose={() => setViewerObjectId(null)}
+        />
+      )}
+      {contextMenu && (
+        <SelectionActionMenu
+          ids={contextMenu.ids}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
         />
       )}
     </div>

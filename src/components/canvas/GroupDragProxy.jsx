@@ -86,7 +86,7 @@ export function GroupDragProxy({
   function handleContextMenu(e) {
     e.evt.preventDefault();
     e.cancelBubble = true;
-    onContextMenu?.();
+    onContextMenu?.(e.evt);
   }
 
   return (

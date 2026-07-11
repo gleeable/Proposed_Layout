@@ -236,6 +236,24 @@ export const createObjectsSlice = (set, get) => ({
     });
   },
 
+  updateSelectionColor: (ids, fill) => {
+    get().pushHistorySnapshot();
+    const idSet = new Set(ids);
+    set({
+      objects: get().objects.map((o) => (idSet.has(o.id) ? { ...o, fill } : o)),
+    });
+  },
+
+  updateSelectionSize: (ids, widthM, heightM) => {
+    get().pushHistorySnapshot();
+    const idSet = new Set(ids);
+    set({
+      objects: get().objects.map((o) => (
+        idSet.has(o.id) ? { ...o, width: widthM, height: heightM } : o
+      )),
+    });
+  },
+
   // Shared by duplicateSelection (fixed offset), the Ctrl+drag group-copy, and
   // clipboard paste (arbitrary offset) — clones the given objects, keeping
   // their shared groupId only if they were a fully-selected persisted group.

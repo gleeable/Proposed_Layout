@@ -55,7 +55,7 @@ export function PlacedObjectShape({
     if (placementModeActive) return;
     evt.evt.preventDefault();
     evt.cancelBubble = true;
-    onContextMenu?.(id);
+    onContextMenu?.(id, evt.evt);
   }
 
   function handleDragStart(evt) {
