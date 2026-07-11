@@ -6,7 +6,7 @@ const TABS = [
   { key: 'product', label: '제품' },
 ];
 
-export function AppShell({ designContent, productContent }) {
+export function AppShell({ designContent, productContent, onSavePdf, canSavePdf }) {
   const activeTab = useAppStore((s) => s.activeTab);
   const setActiveTab = useAppStore((s) => s.setActiveTab);
 
@@ -26,6 +26,14 @@ export function AppShell({ designContent, productContent }) {
             </button>
           ))}
         </nav>
+        <button
+          type="button"
+          className="app-shell__pdf-button"
+          disabled={!canSavePdf}
+          onClick={onSavePdf}
+        >
+          PDF로 저장하기
+        </button>
       </header>
       <main className="app-shell__body">
         {activeTab === 'design' ? designContent : productContent}

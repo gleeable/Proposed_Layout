@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import './App.css';
 import { AppShell } from './components/layout/AppShell';
 import { BuildingSetupForm } from './components/building/BuildingSetupForm';
@@ -11,8 +12,14 @@ import { Design3DView } from './components/canvas/Design3DView';
 import { ProductPanel } from './components/product/ProductPanel';
 import { StorageStatusBanner } from './components/StorageStatusBanner';
 import { useAppStore } from './store/useAppStore';
+import { saveImageAsPdf } from './services/pdfExport';
 
-function DesignTab() {
+// Long enough for Design3DView to mount, run its first WebGL frame, and let
+// the async per-object average-color sampling (Design3DView's
+// useAverageColor) settle, when the 3D tab wasn't already open.
+const VIEW_SWITCH_SETTLE_MS = 500;
+
+function DesignTab({ design3DRef }) {
   const building = useAppStore((s) => s.building);
   const canvasViewMode = useAppStore((s) => s.canvasViewMode);
 
@@ -27,7 +34,7 @@ function DesignTab() {
         <CanvasViewToggle />
         <CanvasToolbar />
         {canvasViewMode === '3d' ? (
-          <Design3DView />
+          <Design3DView ref={design3DRef} />
         ) : (
           <CanvasErrorBoundary>
             <DesignCanvas />
@@ -40,10 +47,39 @@ function DesignTab() {
 }
 
 function App() {
+  const building = useAppStore((s) => s.building);
+  const canvasViewMode = useAppStore((s) => s.canvasViewMode);
+  const setCanvasViewMode = useAppStore((s) => s.setCanvasViewMode);
+  const design3DRef = useRef(null);
+
+  async function handleSavePdf() {
+    if (!building) return;
+
+    const previousMode = canvasViewMode;
+    if (previousMode !== '3d') {
+      setCanvasViewMode('3d');
+      await new Promise((resolve) => setTimeout(resolve, VIEW_SWITCH_SETTLE_MS));
+    }
+
+    const imageDataUrl = design3DRef.current?.captureImage();
+
+    if (previousMode !== '3d') {
+      setCanvasViewMode(previousMode);
+    }
+
+    if (!imageDataUrl) return;
+    await saveImageAsPdf(imageDataUrl, '공간배치-3d.pdf');
+  }
+
   return (
     <>
       <StorageStatusBanner />
-      <AppShell designContent={<DesignTab />} productContent={<ProductPanel />} />
+      <AppShell
+        designContent={<DesignTab design3DRef={design3DRef} />}
+        productContent={<ProductPanel />}
+        onSavePdf={handleSavePdf}
+        canSavePdf={Boolean(building)}
+      />
     </>
   );
 }

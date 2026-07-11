@@ -44,6 +44,27 @@
   font-weight: 600;
 }
 
+.app-shell__pdf-button {
+  margin-left: auto;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-shell__pdf-button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.app-shell__pdf-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .app-shell__body {
   flex: 1;
   min-height: 0;

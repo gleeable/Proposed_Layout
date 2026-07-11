@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Html, OrbitControls, PerspectiveCamera, useGLTF } from '@react-three/drei';
@@ -722,11 +722,18 @@ function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef }) {
   );
 }
 
-export function Design3DView() {
+export const Design3DView = forwardRef(function Design3DView(props, ref) {
   const building = useAppStore((s) => s.building);
   const activeFloorId = useAppStore((s) => s.activeFloorId);
   const objects = useAppStore((s) => s.objects);
   const keysHeldRef = useRef(new Set());
+  const rendererRef = useRef(null);
+
+  // Lets callers outside this view (e.g. the "PDF로 저장" button) grab a
+  // still image of whatever the 3D canvas is currently showing.
+  useImperativeHandle(ref, () => ({
+    captureImage: () => rendererRef.current?.domElement.toDataURL('image/png') ?? null,
+  }));
 
   const floorObjects = useMemo(
     () => objects.filter((o) => o.floorId === activeFloorId),
@@ -769,7 +776,16 @@ export function Design3DView() {
 
   return (
     <div className="design-3d-view">
-      <Canvas dpr={[1, 2]}>
+      <Canvas
+        dpr={[1, 2]}
+        // preserveDrawingBuffer keeps the last rendered frame in the WebGL
+        // buffer so captureImage()'s toDataURL() isn't reading a blank/
+        // cleared canvas (the default behavior right after a paint).
+        gl={{ preserveDrawingBuffer: true }}
+        onCreated={({ gl }) => {
+          rendererRef.current = gl;
+        }}
+      >
         <color attach="background" args={['#e5e7eb']} />
         <Scene
           footprint={building.footprint}
@@ -780,4 +796,4 @@ export function Design3DView() {
       </Canvas>
     </div>
   );
-}
+});
