@@ -5,6 +5,7 @@ export const createUiSlice = (set, get) => ({
   placingCatalogItemId: null,
   isEditingLayout: false,
   isRulerActive: false,
+  isFirstPersonMode: false,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -33,6 +34,8 @@ export const createUiSlice = (set, get) => ({
     const next = !state.isRulerActive;
     return { isRulerActive: next, selectedIds: next ? [] : state.selectedIds };
   }),
+
+  toggleFirstPersonMode: () => set((state) => ({ isFirstPersonMode: !state.isFirstPersonMode })),
 
   clearSelection: () => set({ selectedIds: [] }),
 

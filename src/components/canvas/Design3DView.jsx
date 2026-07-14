@@ -29,6 +29,7 @@ const WALK_SPEED_M_S = 1.4; // an average adult walking pace
 const PERSON_RADIUS_M = 0.25; // keeps the avatar from walking through walls/furniture
 const PERSON_HIDE_DELAY_S = 2; // hide the avatar after this long with no arrow key held
 const CHAIR_SEAT_HEIGHT_RATIO = 0.5; // must match ChairShape3D's own seatHeight = height * 0.5
+const EYE_HEIGHT_M = 1.6; // first-person camera height above the ground/stair/chair level (160cm)
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const SHAPED_3D_CATEGORIES = new Set([
@@ -314,7 +315,7 @@ function PlacedObject3D({ object, footprint }) {
 
 // Simple stylized walking figure — a capsule body, a head, and a small nose
 // cone so its facing direction reads at a glance.
-function Person({ footprint, floorObjects, keysHeldRef }) {
+function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walkerRef }) {
   const groupRef = useRef(null);
   const posRef = useRef({ x: 0, z: 0 });
   const heightRef = useRef(0);
@@ -331,6 +332,11 @@ function Person({ footprint, floorObjects, keysHeldRef }) {
   // block movement), pinning them in place instead of letting them pass
   // through or settle.
   const releasedSinceSittingRef = useRef(true);
+
+  // Hands the position/height/heading refs up to the parent so a sibling
+  // (FirstPersonRig) can drive the camera from the exact same walk state
+  // instead of duplicating the movement simulation.
+  if (walkerRef) walkerRef.current = { posRef, heightRef, headingRef };
 
   // Stairs are climbable (not solid), chairs trigger sitting instead of
   // blocking, and everything else (furniture, trees, doors, products,
@@ -430,7 +436,10 @@ function Person({ footprint, floorObjects, keysHeldRef }) {
     const group = groupRef.current;
     if (group) {
       const idle = state.clock.elapsedTime - lastActiveElapsedRef.current >= PERSON_HIDE_DELAY_S;
-      group.visible = Boolean(sittingChair) || !idle;
+      // Never show the 3rd-person body in first-person mode — the camera
+      // sits right where the head would be, so the doll would just clip
+      // around the view instead of being seen from outside.
+      group.visible = !isFirstPersonMode && (Boolean(sittingChair) || !idle);
       group.position.set(posRef.current.x, heightRef.current, posRef.current.z);
       group.rotation.y = headingRef.current;
     }
@@ -497,21 +506,42 @@ function Floor({ footprint, materialImage }) {
   );
 }
 
-function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef, wallMaterialImage, floorMaterialImage }) {
+// Drives the camera directly from the walker's position/height/heading refs
+// (shared with Person, see walkerRef above) while first-person mode is on —
+// eye height is a fixed 160cm above whatever ground/stair/chair level the
+// walker is standing at. Camera forward is -Z by convention (Person's doll
+// forward is +Z), hence the extra Math.PI so the view faces the walking
+// direction instead of its back.
+function FirstPersonRig({ walkerRef, active }) {
+  useFrame((state) => {
+    if (!active || !walkerRef.current) return;
+    const { posRef, heightRef, headingRef } = walkerRef.current;
+    state.camera.position.set(posRef.current.x, heightRef.current + EYE_HEIGHT_M, posRef.current.z);
+    state.camera.rotation.set(0, headingRef.current + Math.PI, 0);
+  });
+  return null;
+}
+
+function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef, wallMaterialImage, floorMaterialImage, isFirstPersonMode }) {
   const maxDim = Math.max(footprint.widthM, footprint.depthM);
   const camDist = maxDim * 1.3 + 4;
+  const walkerRef = useRef(null);
 
   return (
     <>
       <PerspectiveCamera makeDefault position={[camDist, camDist * 0.75, camDist]} fov={45} />
-      <OrbitControls
-        target={[0, floorHeightM / 3, 0]}
-        maxPolarAngle={Math.PI / 2 - 0.02}
-        minDistance={2}
-        maxDistance={camDist * 3}
-        enableDamping
-        dampingFactor={0.08}
-      />
+      {isFirstPersonMode ? (
+        <FirstPersonRig walkerRef={walkerRef} active={isFirstPersonMode} />
+      ) : (
+        <OrbitControls
+          target={[0, floorHeightM / 3, 0]}
+          maxPolarAngle={Math.PI / 2 - 0.02}
+          minDistance={2}
+          maxDistance={camDist * 3}
+          enableDamping
+          dampingFactor={0.08}
+        />
+      )}
       <ambientLight intensity={0.7} />
       <directionalLight position={[maxDim, maxDim * 1.5, maxDim]} intensity={0.9} />
 
@@ -526,7 +556,13 @@ function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef, wallMateria
         </Suspense>
       ))}
 
-      <Person footprint={footprint} floorObjects={floorObjects} keysHeldRef={keysHeldRef} />
+      <Person
+        footprint={footprint}
+        floorObjects={floorObjects}
+        keysHeldRef={keysHeldRef}
+        isFirstPersonMode={isFirstPersonMode}
+        walkerRef={walkerRef}
+      />
     </>
   );
 }
@@ -538,6 +574,7 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
   const wallMaterialId = useAppStore((s) => s.wallMaterialId);
   const floorMaterialId = useAppStore((s) => s.floorMaterialId);
   const customMaterials = useAppStore((s) => s.customMaterials);
+  const isFirstPersonMode = useAppStore((s) => s.isFirstPersonMode);
   const keysHeldRef = useRef(new Set());
   const rendererRef = useRef(null);
 
@@ -615,6 +652,7 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
           keysHeldRef={keysHeldRef}
           wallMaterialImage={wallMaterialImage}
           floorMaterialImage={floorMaterialImage}
+          isFirstPersonMode={isFirstPersonMode}
         />
       </Canvas>
     </div>
