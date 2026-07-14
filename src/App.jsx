@@ -13,7 +13,7 @@ import { Design3DView } from './components/canvas/Design3DView';
 import { ProductPanel } from './components/product/ProductPanel';
 import { StorageStatusBanner } from './components/StorageStatusBanner';
 import { useAppStore } from './store/useAppStore';
-import { saveImageAsPdf } from './services/pdfExport';
+import { saveDesignAsPdf } from './services/pdfExport';
 
 // Long enough for Design3DView to mount, run its first WebGL frame, and let
 // the async per-object average-color sampling (Design3DView's
@@ -82,7 +82,18 @@ function App() {
     }
 
     if (!imageDataUrl) return;
-    await saveImageAsPdf(imageDataUrl, '공간배치-3d.pdf');
+
+    const { objects, floors, activeFloorId } = useAppStore.getState();
+    const floorObjects = objects.filter((o) => o.floorId === activeFloorId);
+    const floorLabel = floors.find((f) => f.id === activeFloorId)?.label || '';
+
+    await saveDesignAsPdf({
+      imageDataUrl,
+      footprint: building.footprint,
+      floorObjects,
+      floorLabel,
+      fileName: '공간배치-3d.pdf',
+    });
   }
 
   return (
