@@ -36,6 +36,8 @@ const MAX_FOV = 75; // most zoomed out
 const FOV_WHEEL_SENSITIVITY = 0.04; // degrees of fov per pixel of wheel delta
 const LOOK_SENSITIVITY = 0.0035; // radians of yaw/pitch per pixel of mouse drag
 const MAX_PITCH = Math.PI / 2 - 0.05; // just short of straight up/down
+const CLICK_WALK_ARRIVE_M = 0.15; // close enough to a clicked floor point to stop
+const CLICK_DRAG_THRESHOLD_PX = 6; // pointer movement below this counts as a click, not a look-drag
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const SHAPED_3D_CATEGORIES = new Set([
@@ -321,7 +323,7 @@ function PlacedObject3D({ object, footprint }) {
 
 // Simple stylized walking figure — a capsule body, a head, and a small nose
 // cone so its facing direction reads at a glance.
-function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walkerRef, viewYawRef }) {
+function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walkerRef, viewYawRef, mouseTargetRef }) {
   const groupRef = useRef(null);
   const posRef = useRef({ x: 0, z: 0 });
   const heightRef = useRef(0);
@@ -381,7 +383,27 @@ function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walke
       dx = rightInput;
       dz = -upInput;
     }
-    const wantsToMove = dx !== 0 || dz !== 0;
+    let wantsToMove = dx !== 0 || dz !== 0;
+
+    // Clicking the floor in first-person mode walks straight to that point
+    // instead of requiring the arrow keys — but arrow keys always win if
+    // pressed, cancelling any pending click-to-walk target.
+    if (mouseTargetRef) {
+      if (wantsToMove) {
+        mouseTargetRef.current = null;
+      } else if (mouseTargetRef.current) {
+        const toTargetX = mouseTargetRef.current.x - posRef.current.x;
+        const toTargetZ = mouseTargetRef.current.z - posRef.current.z;
+        const targetDist = Math.hypot(toTargetX, toTargetZ);
+        if (targetDist < CLICK_WALK_ARRIVE_M) {
+          mouseTargetRef.current = null;
+        } else {
+          dx = toTargetX / targetDist;
+          dz = toTargetZ / targetDist;
+          wantsToMove = true;
+        }
+      }
+    }
 
     if (keys.size === 0) releasedSinceSittingRef.current = true;
 
@@ -509,10 +531,27 @@ function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walke
 // materialTexture.js, this reads as one continuous floor rather than tiles.
 const FLOOR_TILE_SIZE_M = 2;
 
-function Floor({ footprint, materialImage }) {
+function Floor({ footprint, materialImage, isFirstPersonMode, onGroundClick }) {
   const texture = useSurfaceTexture(materialImage, footprint.widthM / FLOOR_TILE_SIZE_M, footprint.depthM / FLOOR_TILE_SIZE_M);
+  const pointerDownRef = useRef(null);
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      onPointerDown={(e) => {
+        if (!isFirstPersonMode) return;
+        pointerDownRef.current = { x: e.clientX, y: e.clientY };
+      }}
+      onPointerUp={(e) => {
+        if (!isFirstPersonMode || !pointerDownRef.current) return;
+        const dist = Math.hypot(e.clientX - pointerDownRef.current.x, e.clientY - pointerDownRef.current.y);
+        pointerDownRef.current = null;
+        // A small drag is still a look-drag (see the canvas-level pointer
+        // handlers below), not a click-to-walk command.
+        if (dist < CLICK_DRAG_THRESHOLD_PX) {
+          onGroundClick?.(e.point.x, e.point.z);
+        }
+      }}
+    >
       <planeGeometry args={[footprint.widthM, footprint.depthM]} />
       {/* Same explicit-every-prop + toneMapped reasoning as WallMaterial above. */}
       <meshStandardMaterial
@@ -551,7 +590,7 @@ function FirstPersonRig({ walkerRef, viewYawRef, viewPitchRef, fovRef, active })
 
 function Scene({
   footprint, floorObjects, floorHeightM, keysHeldRef, wallMaterialImage, floorMaterialImage,
-  isFirstPersonMode, walkerRef, viewYawRef, viewPitchRef, fovRef,
+  isFirstPersonMode, walkerRef, viewYawRef, viewPitchRef, fovRef, mouseTargetRef,
 }) {
   const maxDim = Math.max(footprint.widthM, footprint.depthM);
   const camDist = maxDim * 1.3 + 4;
@@ -580,7 +619,14 @@ function Scene({
       <ambientLight intensity={0.7} />
       <directionalLight position={[maxDim, maxDim * 1.5, maxDim]} intensity={0.9} />
 
-      <Floor footprint={footprint} materialImage={floorMaterialImage} />
+      <Floor
+        footprint={footprint}
+        materialImage={floorMaterialImage}
+        isFirstPersonMode={isFirstPersonMode}
+        onGroundClick={(x, z) => {
+          if (mouseTargetRef) mouseTargetRef.current = { x, z };
+        }}
+      />
       <gridHelper args={[maxDim * 1.6, 24, '#a5b4fc', '#e5e7eb']} position={[0, 0.001, 0]} />
 
       <Walls footprint={footprint} heightM={floorHeightM} materialImage={wallMaterialImage} />
@@ -598,6 +644,7 @@ function Scene({
         isFirstPersonMode={isFirstPersonMode}
         walkerRef={walkerRef}
         viewYawRef={viewYawRef}
+        mouseTargetRef={mouseTargetRef}
       />
     </>
   );
@@ -621,6 +668,7 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
   const viewPitchRef = useRef(0);
   const fovRef = useRef(DEFAULT_FOV);
   const dragRef = useRef(null); // { x, y } of the last pointer position while dragging, or null
+  const mouseTargetRef = useRef(null); // { x, z } walk-to point from clicking the floor, or null
 
   const wallMaterialImage = useMemo(
     () => resolveMaterialImage(wallMaterialId, customMaterials),
@@ -688,6 +736,7 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
     } else if (!isFirstPersonMode && wasFirstPersonRef.current) {
       fovRef.current = DEFAULT_FOV;
       dragRef.current = null;
+      mouseTargetRef.current = null;
       const camera = cameraRef.current;
       if (camera) {
         camera.fov = DEFAULT_FOV;
@@ -748,6 +797,7 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
           viewYawRef={viewYawRef}
           viewPitchRef={viewPitchRef}
           fovRef={fovRef}
+          mouseTargetRef={mouseTargetRef}
         />
       </Canvas>
     </div>
