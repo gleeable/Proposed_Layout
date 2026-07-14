@@ -135,14 +135,24 @@ export function DoorShape3D({ width, depth, height }) {
 // the outside rather than a flat tinted panel.
 export function WindowShape3D({ width, depth, height }) {
   const frameThickness = Math.max(Math.min(width, height) * 0.06, 0.02);
+  // The frame is a shallow wall-opening slab, capped independently of the
+  // object's placed footprint depth (same reasoning as MirrorFrameShape3D) —
+  // otherwise it's a full solid block spanning the whole depth, and the
+  // "glass" ends up nested entirely inside it (invisible from every angle,
+  // since it never pokes past the opaque frame's surface) instead of
+  // reading as a window.
+  const frameDepth = Math.min(depth, Math.max(Math.min(width, height) * 0.12, 0.05));
+  // Slightly deeper than the frame so it pokes out past both faces —
+  // visible looking in from outside and looking out from inside.
+  const glassDepth = frameDepth + 0.01;
   return (
     <group>
       <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[width, height, depth]} />
+        <boxGeometry args={[width, height, frameDepth]} />
         <meshStandardMaterial color="#E5E7EB" />
       </mesh>
       <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), Math.max(height - frameThickness * 2, 0.02), depth * 0.5]} />
+        <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), Math.max(height - frameThickness * 2, 0.02), glassDepth]} />
         <meshStandardMaterial
           color="#F8FBFF"
           emissive="#DCEBFF"
@@ -151,7 +161,7 @@ export function WindowShape3D({ width, depth, height }) {
         />
       </mesh>
       <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), frameThickness * 0.6, depth * 0.7]} />
+        <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), frameThickness * 0.6, glassDepth + 0.002]} />
         <meshStandardMaterial color="#E5E7EB" />
       </mesh>
     </group>
