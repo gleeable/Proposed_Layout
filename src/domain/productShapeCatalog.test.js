@@ -44,4 +44,16 @@ describe('productShapeCatalog', () => {
     expect(category).not.toBe('box');
     expect(PRODUCT_ARCHETYPE_BY_CATEGORY[category]).toBeDefined();
   });
+
+  it('defaults bare "에어컨" to the wall-mounted AC archetype', () => {
+    expect(inferProductShapeCategory('에어컨')).toBe('wall_mounted_ac');
+  });
+
+  it('routes "스탠드 에어컨" to the standing AC archetype, not wall-mounted', () => {
+    expect(inferProductShapeCategory('스탠드 에어컨')).toBe('standing_ac');
+  });
+
+  it('routes "벽걸이 에어컨" to the wall-mounted AC archetype', () => {
+    expect(inferProductShapeCategory('벽걸이 에어컨')).toBe('wall_mounted_ac');
+  });
 });

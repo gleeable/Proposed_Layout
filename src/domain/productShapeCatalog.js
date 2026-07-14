@@ -189,7 +189,21 @@ const ELECTRONICS_MEDIA = [
   { id: 'humidifier', archetype: 'appliance', keywords: ['가습기', 'humidifier'] },
   { id: 'dehumidifier', archetype: 'appliance', keywords: ['제습기', 'dehumidifier'] },
   { id: 'electric_fan', archetype: 'floor_fan', keywords: ['선풍기', 'electric fan', 'fan'] },
-  { id: 'air_conditioner', archetype: 'appliance', keywords: ['에어컨', 'air conditioner'] },
+  // Order matters here: the keyword-fallback matcher (inferProductShapeCategory)
+  // takes the first entry whose keyword list matches, and '벽걸이 에어컨'/
+  // '스탠드 에어컨' both contain the bare '에어컨' substring — so the more
+  // specific standing_ac entry must be checked before wall_mounted_ac, whose
+  // bare '에어컨' keyword is meant to catch everything standing_ac didn't.
+  {
+    id: 'standing_ac',
+    archetype: 'standing_ac',
+    keywords: ['스탠드에어컨', '스탠드 에어컨', '스탠드형에어컨', 'stand air conditioner', 'standing air conditioner', 'tower air conditioner', 'floor standing ac'],
+  },
+  {
+    id: 'wall_mounted_ac',
+    archetype: 'wall_mounted_ac',
+    keywords: ['에어컨', '벽걸이에어컨', '벽걸이 에어컨', 'air conditioner', 'wall mounted air conditioner', 'wall ac', 'split ac'],
+  },
 ];
 
 const LIGHTING_DECOR = [

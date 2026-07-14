@@ -789,6 +789,51 @@ export function PianoShape3D({ width, depth, height, fill }) {
   );
 }
 
+// A shallow wall-mounted box with a front vent slit and a small display —
+// reads as a split-type indoor AC unit rather than a full-depth appliance.
+export function WallMountedACShape3D({ width, depth, height, fill }) {
+  const bodyDepth = Math.min(depth, Math.max(Math.min(width, height) * 0.35, 0.12));
+  const ventHeight = Math.max(height * 0.18, 0.02);
+  return (
+    <group>
+      <mesh position={[0, height / 2, 0]}>
+        <boxGeometry args={[width, height, bodyDepth]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, height * 0.18, bodyDepth / 2 + 0.002]}>
+        <boxGeometry args={[width * 0.92, ventHeight, 0.006]} />
+        <meshStandardMaterial color="#374151" />
+      </mesh>
+      <mesh position={[width * 0.3, height * 0.75, bodyDepth / 2 + 0.002]}>
+        <boxGeometry args={[width * 0.1, height * 0.05, 0.004]} />
+        <meshStandardMaterial color="#9CA3AF" />
+      </mesh>
+    </group>
+  );
+}
+
+// A tall narrow tower with a vertical vent strip — reads as a free-standing
+// floor AC unit.
+export function StandingACShape3D({ width, depth, height, fill }) {
+  const footHeight = Math.max(height * 0.04, 0.02);
+  return (
+    <group>
+      <mesh position={[0, footHeight + (height - footHeight) / 2, 0]}>
+        <boxGeometry args={[width, height - footHeight, depth]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, height * 0.5, depth / 2 + 0.002]}>
+        <boxGeometry args={[width * 0.15, height * 0.7, 0.006]} />
+        <meshStandardMaterial color="#374151" />
+      </mesh>
+      <mesh position={[0, height * 0.85, depth / 2 + 0.002]}>
+        <boxGeometry args={[width * 0.3, height * 0.04, 0.004]} />
+        <meshStandardMaterial color="#9CA3AF" />
+      </mesh>
+    </group>
+  );
+}
+
 // Keyed by archetype name (not category id) — see productShapeCatalog.js
 // for the category -> archetype mapping.
 export const ARCHETYPE_COMPONENTS = {
@@ -817,6 +862,8 @@ export const ARCHETYPE_COMPONENTS = {
   curtain: CurtainShape3D,
   plant: TreeShape3D,
   appliance: ApplianceShape3D,
+  wall_mounted_ac: WallMountedACShape3D,
+  standing_ac: StandingACShape3D,
   bed: BedShape3D,
   blanket: BlanketShape3D,
   pillow: PillowShape3D,
