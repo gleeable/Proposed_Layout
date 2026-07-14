@@ -127,7 +127,7 @@ const KITCHEN = [
   { id: 'rice_cooker', archetype: 'appliance', keywords: ['밥솥', 'rice cooker'] },
   { id: 'wine_cooler', archetype: 'appliance', keywords: ['와인쿨러', 'wine cooler'] },
   { id: 'air_fryer', archetype: 'appliance', keywords: ['에어프라이어', 'air fryer'] },
-  { id: 'kettle', archetype: 'appliance', keywords: ['전기포트', 'kettle'] },
+  { id: 'kettle', archetype: 'kettle', keywords: ['전기포트', '포트기', '주전자', 'kettle'] },
   { id: 'bbq_grill', archetype: 'appliance', keywords: ['그릴', 'bbq grill', 'barbecue'] },
   { id: 'kitchen_sink', archetype: 'sink_basin', keywords: ['주방싱크대', 'kitchen sink'] },
   { id: 'trash_can', archetype: 'trash_bin', keywords: ['쓰레기통', 'trash can'] },

@@ -906,6 +906,49 @@ export function PowerStripShape3D({ width, depth, height, fill }) {
   );
 }
 
+// A rounded pitcher body with a spout, a looped handle, a lid, and a small
+// power base — reads as an electric kettle rather than a boxed appliance.
+export function KettleShape3D({ width, depth, height, fill }) {
+  const bodyRadius = Math.min(width, depth) * 0.42;
+  const baseHeight = Math.max(height * 0.08, 0.008);
+  const lidHeight = Math.max(height * 0.08, 0.008);
+  const bodyHeight = Math.max(height - baseHeight - lidHeight, 0.03);
+  return (
+    <group>
+      <mesh position={[0, baseHeight / 2, 0]}>
+        <cylinderGeometry args={[bodyRadius * 1.05, bodyRadius * 1.1, baseHeight, 20]} />
+        <meshStandardMaterial color="#374151" />
+      </mesh>
+      <mesh position={[0, baseHeight + bodyHeight / 2, 0]}>
+        <cylinderGeometry args={[bodyRadius * 0.85, bodyRadius, bodyHeight, 20]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, baseHeight + bodyHeight + lidHeight / 2, 0]}>
+        <cylinderGeometry args={[bodyRadius * 0.78, bodyRadius * 0.85, lidHeight, 20]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, baseHeight + bodyHeight + lidHeight + bodyRadius * 0.12, 0]}>
+        <sphereGeometry args={[bodyRadius * 0.12, 8, 8]} />
+        <meshStandardMaterial color="#374151" />
+      </mesh>
+      <mesh
+        position={[bodyRadius * 0.85, baseHeight + bodyHeight * 0.8, 0]}
+        rotation={[0, 0, -Math.PI / 3]}
+      >
+        <cylinderGeometry args={[bodyRadius * 0.11, bodyRadius * 0.17, bodyRadius * 0.85, 10]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh
+        position={[-bodyRadius * 1.05, baseHeight + bodyHeight * 0.55, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      >
+        <torusGeometry args={[bodyRadius * 0.42, bodyRadius * 0.08, 8, 16, Math.PI * 1.3]} />
+        <meshStandardMaterial color="#1F2937" />
+      </mesh>
+    </group>
+  );
+}
+
 // Keyed by archetype name (not category id) — see productShapeCatalog.js
 // for the category -> archetype mapping.
 export const ARCHETYPE_COMPONENTS = {
@@ -937,6 +980,7 @@ export const ARCHETYPE_COMPONENTS = {
   appliance: ApplianceShape3D,
   wall_mounted_ac: WallMountedACShape3D,
   power_strip: PowerStripShape3D,
+  kettle: KettleShape3D,
   standing_ac: StandingACShape3D,
   bed: BedShape3D,
   blanket: BlanketShape3D,
