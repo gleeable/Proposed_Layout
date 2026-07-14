@@ -4,6 +4,7 @@ export const createUiSlice = (set, get) => ({
   canvasViewMode: '2d',
   placingCatalogItemId: null,
   isEditingLayout: false,
+  isRulerActive: false,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -24,6 +25,14 @@ export const createUiSlice = (set, get) => ({
   },
 
   cancelPlacingProduct: () => set({ placingCatalogItemId: null }),
+
+  // Turning the ruler on clears selection so the Transformer handles don't
+  // clutter the canvas while measuring; turning it off is handled by the
+  // ruler hook itself, which drops its measured segments on deactivation.
+  toggleRulerMode: () => set((state) => {
+    const next = !state.isRulerActive;
+    return { isRulerActive: next, selectedIds: next ? [] : state.selectedIds };
+  }),
 
   clearSelection: () => set({ selectedIds: [] }),
 

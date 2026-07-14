@@ -4,6 +4,11 @@ import { normalizeTransform } from '../../domain/transform';
 import { stagePxToMeters } from './canvasGeometry';
 
 const MIN_BOX_PX = 12;
+// While Ctrl/Cmd is held during a resize, each frame's box only moves this
+// fraction of the way from where it was toward where the pointer says it
+// should be — the box lags the cursor, so a large mouse movement only
+// produces a small size change, giving fine-grained control.
+const PRECISION_CATCH_UP = 0.15;
 
 // A node can go away (deleted, moved to another floor, unmounted mid-drag)
 // between when `node` was looked up for this render and when the Transformer
@@ -21,7 +26,7 @@ function isNodeAttachable(node) {
   return Boolean(node.getStage());
 }
 
-export function SelectionTransformer({ node, selectedObject, scale, offsetX, offsetY, onCommit }) {
+export function SelectionTransformer({ node, selectedObject, scale, offsetX, offsetY, onCommit, ctrlRef }) {
   const trRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -60,9 +65,17 @@ export function SelectionTransformer({ node, selectedObject, scale, offsetX, off
     <Transformer
       ref={trRef}
       rotateEnabled
-      boundBoxFunc={(oldBox, newBox) => (
-        Math.abs(newBox.width) < MIN_BOX_PX || Math.abs(newBox.height) < MIN_BOX_PX ? oldBox : newBox
-      )}
+      boundBoxFunc={(oldBox, newBox) => {
+        if (Math.abs(newBox.width) < MIN_BOX_PX || Math.abs(newBox.height) < MIN_BOX_PX) return oldBox;
+        if (!ctrlRef?.current) return newBox;
+        return {
+          ...newBox,
+          x: oldBox.x + (newBox.x - oldBox.x) * PRECISION_CATCH_UP,
+          y: oldBox.y + (newBox.y - oldBox.y) * PRECISION_CATCH_UP,
+          width: oldBox.width + (newBox.width - oldBox.width) * PRECISION_CATCH_UP,
+          height: oldBox.height + (newBox.height - oldBox.height) * PRECISION_CATCH_UP,
+        };
+      }}
       onTransformEnd={handleTransformEnd}
     />
   );

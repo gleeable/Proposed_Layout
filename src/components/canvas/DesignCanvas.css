@@ -14,3 +14,7 @@
 .design-canvas.is-placing {
   cursor: crosshair;
 }
+
+.design-canvas.is-measuring {
+  cursor: crosshair;
+}

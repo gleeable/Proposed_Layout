@@ -17,7 +17,18 @@ import { useMarqueeSelection } from './useMarqueeSelection';
 import { useProductPlacement } from './useProductPlacement';
 import { useProductCopyDrag } from './useProductCopyDrag';
 import { useKeyboardModifiers } from './useKeyboardModifiers';
+import { useRulerTool } from './useRulerTool';
+import { RulerOverlay } from './RulerOverlay';
 import './DesignCanvas.css';
+
+const ARROW_MOVE_STEP_M = 0.1;
+const ARROW_MOVE_STEP_FINE_M = 0.01;
+const ARROW_KEY_DELTAS = {
+  ArrowUp: { dx: 0, dy: -1 },
+  ArrowDown: { dx: 0, dy: 1 },
+  ArrowLeft: { dx: -1, dy: 0 },
+  ArrowRight: { dx: 1, dy: 0 },
+};
 
 function isValidPlacedObject(o) {
   return (
@@ -56,6 +67,7 @@ export function DesignCanvas() {
   const placingCatalogItemId = useAppStore((s) => s.placingCatalogItemId);
   const isEditingLayout = useAppStore((s) => s.isEditingLayout);
   const resizeFootprint = useAppStore((s) => s.resizeFootprint);
+  const isRulerActive = useAppStore((s) => s.isRulerActive);
 
   const isPlacing = Boolean(placingCatalogItemId);
   const { ctrlRef } = useKeyboardModifiers();
@@ -117,7 +129,25 @@ export function DesignCanvas() {
         return;
       }
 
+      if (e.key.toLowerCase() === 'm' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        state.toggleRulerMode();
+        return;
+      }
+
       if (state.selectedIds.length === 0) return;
+
+      const arrowDelta = ARROW_KEY_DELTAS[e.key];
+      if (arrowDelta) {
+        e.preventDefault();
+        const step = e.ctrlKey || e.metaKey ? ARROW_MOVE_STEP_FINE_M : ARROW_MOVE_STEP_M;
+        // e.repeat is true for OS-generated auto-repeat while the key stays
+        // held — treat "holding the key down" as one undo-able gesture
+        // rather than pushing a snapshot per repeat tick.
+        if (!e.repeat) state.pushHistorySnapshot();
+        state.applyDeltaToSelection(state.selectedIds, arrowDelta.dx * step, arrowDelta.dy * step);
+        return;
+      }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
@@ -168,7 +198,7 @@ export function DesignCanvas() {
   }, [objects, activeFloorId]);
 
   const marquee = useMarqueeSelection({
-    disabled: isPlacing,
+    disabled: isPlacing || isRulerActive,
     objects: floorObjects,
     getNode,
     setSelectedIds,
@@ -190,6 +220,7 @@ export function DesignCanvas() {
   const offsetY = baseOffsetY + viewport.pan.y;
 
   const placement = useProductPlacement({ scale, offsetX, offsetY, activeFloorId });
+  const ruler = useRulerTool({ scale, offsetX, offsetY });
   const copyDrag = useProductCopyDrag({
     getNode,
     scale,
@@ -226,11 +257,22 @@ export function DesignCanvas() {
   function handleStagePointerMove(e) {
     placement.handleStagePointerMove(e);
     marquee.handleStagePointerMove(e);
+    ruler.handleStagePointerMove(e);
+  }
+
+  function handleStageClick(e) {
+    if (placement.handleStageClick(e)) return;
+    ruler.handleStageClick(e);
+  }
+
+  function handleStageContextMenu(e) {
+    if (ruler.handleStageContextMenu(e)) e.evt.preventDefault();
   }
 
   const containerClassName = [
     'design-canvas',
     isPlacing ? 'is-placing' : '',
+    isRulerActive ? 'is-measuring' : '',
     marquee.marqueeRect ? 'is-marquee-selecting' : '',
   ]
     .filter(Boolean)
@@ -248,7 +290,8 @@ export function DesignCanvas() {
           onPointerMove={handleStagePointerMove}
           onPointerUp={marquee.handleStagePointerUp}
           onPointerCancel={marquee.handleStagePointerCancel}
-          onClick={placement.handleStageClick}
+          onClick={handleStageClick}
+          onContextMenu={handleStageContextMenu}
         >
           <Layer>
             <FootprintOutline
@@ -283,7 +326,7 @@ export function DesignCanvas() {
                 offsetY={offsetY}
                 isSelected={selectedIds.includes(object.id)}
                 draggable={!(selectedIds.length > 1 && selectedIds.includes(object.id))}
-                placementModeActive={isPlacing}
+                placementModeActive={isPlacing || isRulerActive}
                 registerNodeRef={registerNodeRef}
                 onSelect={(id, additive) => selectObject(id, { additive })}
                 onDragStart={copyDrag.handleObjectDragStart}
@@ -308,6 +351,7 @@ export function DesignCanvas() {
               offsetX={offsetX}
               offsetY={offsetY}
               onCommit={updateObjectTransform}
+              ctrlRef={ctrlRef}
             />
             <GroupDragProxy
               selectedIds={selectedIds}
@@ -332,6 +376,14 @@ export function DesignCanvas() {
                 listening={false}
               />
             )}
+            <RulerOverlay
+              segments={ruler.segments}
+              pendingStart={ruler.pendingStart}
+              previewPoint={ruler.previewPoint}
+              scale={scale}
+              offsetX={offsetX}
+              offsetY={offsetY}
+            />
           </Layer>
         </Stage>
       )}

@@ -9,6 +9,8 @@ const VIEW_MODES = [
 export function CanvasViewToggle() {
   const canvasViewMode = useAppStore((s) => s.canvasViewMode);
   const setCanvasViewMode = useAppStore((s) => s.setCanvasViewMode);
+  const isRulerActive = useAppStore((s) => s.isRulerActive);
+  const toggleRulerMode = useAppStore((s) => s.toggleRulerMode);
 
   return (
     <div className="canvas-view-toggle">
@@ -22,6 +24,14 @@ export function CanvasViewToggle() {
           {mode.label}
         </button>
       ))}
+      <button
+        type="button"
+        className={`canvas-view-toggle__btn ${isRulerActive ? 'is-active' : ''}`}
+        onClick={toggleRulerMode}
+        title="자 도구 (단축키: M)"
+      >
+        자
+      </button>
     </div>
   );
 }
