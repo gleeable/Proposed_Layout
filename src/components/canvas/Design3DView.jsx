@@ -30,6 +30,12 @@ const PERSON_RADIUS_M = 0.25; // keeps the avatar from walking through walls/fur
 const PERSON_HIDE_DELAY_S = 2; // hide the avatar after this long with no arrow key held
 const CHAIR_SEAT_HEIGHT_RATIO = 0.5; // must match ChairShape3D's own seatHeight = height * 0.5
 const EYE_HEIGHT_M = 1.6; // first-person camera height above the ground/stair/chair level (160cm)
+const DEFAULT_FOV = 45;
+const MIN_FOV = 20; // most zoomed in
+const MAX_FOV = 75; // most zoomed out
+const FOV_WHEEL_SENSITIVITY = 0.04; // degrees of fov per pixel of wheel delta
+const LOOK_SENSITIVITY = 0.0035; // radians of yaw/pitch per pixel of mouse drag
+const MAX_PITCH = Math.PI / 2 - 0.05; // just short of straight up/down
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const SHAPED_3D_CATEGORIES = new Set([
@@ -315,7 +321,7 @@ function PlacedObject3D({ object, footprint }) {
 
 // Simple stylized walking figure — a capsule body, a head, and a small nose
 // cone so its facing direction reads at a glance.
-function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walkerRef }) {
+function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walkerRef, viewYawRef }) {
   const groupRef = useRef(null);
   const posRef = useRef({ x: 0, z: 0 });
   const heightRef = useRef(0);
@@ -356,12 +362,25 @@ function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walke
   useFrame((state, rawDelta) => {
     const delta = Math.min(rawDelta, 0.1); // guard against huge jumps after a tab was backgrounded
     const keys = keysHeldRef.current;
-    let dx = 0;
-    let dz = 0;
-    if (keys.has('ArrowUp')) dz -= 1;
-    if (keys.has('ArrowDown')) dz += 1;
-    if (keys.has('ArrowLeft')) dx -= 1;
-    if (keys.has('ArrowRight')) dx += 1;
+    const upInput = (keys.has('ArrowUp') ? 1 : 0) - (keys.has('ArrowDown') ? 1 : 0);
+    const rightInput = (keys.has('ArrowRight') ? 1 : 0) - (keys.has('ArrowLeft') ? 1 : 0);
+    let dx;
+    let dz;
+    if (isFirstPersonMode && viewYawRef) {
+      // Move relative to where the mouse is currently looking, not fixed
+      // world axes — forward/right vectors derived from the same yaw
+      // FirstPersonRig points the camera at (see its "+ Math.PI" comment).
+      const yaw = viewYawRef.current;
+      const forwardX = -Math.sin(yaw);
+      const forwardZ = -Math.cos(yaw);
+      const rightX = Math.cos(yaw);
+      const rightZ = -Math.sin(yaw);
+      dx = forwardX * upInput + rightX * rightInput;
+      dz = forwardZ * upInput + rightZ * rightInput;
+    } else {
+      dx = rightInput;
+      dz = -upInput;
+    }
     const wantsToMove = dx !== 0 || dz !== 0;
 
     if (keys.size === 0) releasedSinceSittingRef.current = true;
@@ -512,26 +531,42 @@ function Floor({ footprint, materialImage }) {
 // walker is standing at. Camera forward is -Z by convention (Person's doll
 // forward is +Z), hence the extra Math.PI so the view faces the walking
 // direction instead of its back.
-function FirstPersonRig({ walkerRef, active }) {
+function FirstPersonRig({ walkerRef, viewYawRef, viewPitchRef, fovRef, active }) {
   useFrame((state) => {
     if (!active || !walkerRef.current) return;
-    const { posRef, heightRef, headingRef } = walkerRef.current;
+    const { posRef, heightRef } = walkerRef.current;
     state.camera.position.set(posRef.current.x, heightRef.current + EYE_HEIGHT_M, posRef.current.z);
-    state.camera.rotation.set(0, headingRef.current + Math.PI, 0);
+    // 'YXZ' (yaw applied before pitch) is the standard order for a
+    // mouse-look camera — 'XYZ' would fold pitch and yaw together and make
+    // the horizon tilt as soon as you look up/down while turning.
+    state.camera.rotation.order = 'YXZ';
+    state.camera.rotation.set(viewPitchRef.current, viewYawRef.current, 0);
+    if (state.camera.fov !== fovRef.current) {
+      state.camera.fov = fovRef.current;
+      state.camera.updateProjectionMatrix();
+    }
   });
   return null;
 }
 
-function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef, wallMaterialImage, floorMaterialImage, isFirstPersonMode }) {
+function Scene({
+  footprint, floorObjects, floorHeightM, keysHeldRef, wallMaterialImage, floorMaterialImage,
+  isFirstPersonMode, walkerRef, viewYawRef, viewPitchRef, fovRef,
+}) {
   const maxDim = Math.max(footprint.widthM, footprint.depthM);
   const camDist = maxDim * 1.3 + 4;
-  const walkerRef = useRef(null);
 
   return (
     <>
       <PerspectiveCamera makeDefault position={[camDist, camDist * 0.75, camDist]} fov={45} />
       {isFirstPersonMode ? (
-        <FirstPersonRig walkerRef={walkerRef} active={isFirstPersonMode} />
+        <FirstPersonRig
+          walkerRef={walkerRef}
+          viewYawRef={viewYawRef}
+          viewPitchRef={viewPitchRef}
+          fovRef={fovRef}
+          active={isFirstPersonMode}
+        />
       ) : (
         <OrbitControls
           target={[0, floorHeightM / 3, 0]}
@@ -562,6 +597,7 @@ function Scene({ footprint, floorObjects, floorHeightM, keysHeldRef, wallMateria
         keysHeldRef={keysHeldRef}
         isFirstPersonMode={isFirstPersonMode}
         walkerRef={walkerRef}
+        viewYawRef={viewYawRef}
       />
     </>
   );
@@ -577,6 +613,14 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
   const isFirstPersonMode = useAppStore((s) => s.isFirstPersonMode);
   const keysHeldRef = useRef(new Set());
   const rendererRef = useRef(null);
+  const cameraRef = useRef(null);
+  // Shared with Person/FirstPersonRig — see their comments for why these
+  // live up here instead of inside Scene.
+  const walkerRef = useRef(null);
+  const viewYawRef = useRef(0);
+  const viewPitchRef = useRef(0);
+  const fovRef = useRef(DEFAULT_FOV);
+  const dragRef = useRef(null); // { x, y } of the last pointer position while dragging, or null
 
   const wallMaterialImage = useMemo(
     () => resolveMaterialImage(wallMaterialId, customMaterials),
@@ -630,6 +674,29 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
     };
   }, []);
 
+  // Entering first-person: start the view facing the same way the 3rd-person
+  // avatar last faced, so the switch doesn't snap to some unrelated
+  // direction. Leaving it: hand the camera's fov back to its default so the
+  // orbit view isn't left however zoomed the walkthrough was.
+  const wasFirstPersonRef = useRef(false);
+  useEffect(() => {
+    if (isFirstPersonMode && !wasFirstPersonRef.current) {
+      const heading = walkerRef.current?.headingRef.current ?? 0;
+      viewYawRef.current = heading + Math.PI;
+      viewPitchRef.current = 0;
+      fovRef.current = DEFAULT_FOV;
+    } else if (!isFirstPersonMode && wasFirstPersonRef.current) {
+      fovRef.current = DEFAULT_FOV;
+      dragRef.current = null;
+      const camera = cameraRef.current;
+      if (camera) {
+        camera.fov = DEFAULT_FOV;
+        camera.updateProjectionMatrix();
+      }
+    }
+    wasFirstPersonRef.current = isFirstPersonMode;
+  }, [isFirstPersonMode]);
+
   if (!building) return null;
 
   return (
@@ -640,8 +707,32 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
         // buffer so captureImage()'s toDataURL() isn't reading a blank/
         // cleared canvas (the default behavior right after a paint).
         gl={{ preserveDrawingBuffer: true }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, camera }) => {
           rendererRef.current = gl;
+          cameraRef.current = camera;
+        }}
+        onPointerDown={(e) => {
+          if (!isFirstPersonMode) return;
+          dragRef.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerMove={(e) => {
+          if (!isFirstPersonMode || !dragRef.current) return;
+          const dx = e.clientX - dragRef.current.x;
+          const dy = e.clientY - dragRef.current.y;
+          dragRef.current = { x: e.clientX, y: e.clientY };
+          viewYawRef.current -= dx * LOOK_SENSITIVITY;
+          viewPitchRef.current = clamp(viewPitchRef.current - dy * LOOK_SENSITIVITY, -MAX_PITCH, MAX_PITCH);
+        }}
+        onPointerUp={() => {
+          dragRef.current = null;
+        }}
+        onPointerLeave={() => {
+          dragRef.current = null;
+        }}
+        onWheel={(e) => {
+          if (!isFirstPersonMode) return;
+          e.preventDefault();
+          fovRef.current = clamp(fovRef.current + e.deltaY * FOV_WHEEL_SENSITIVITY, MIN_FOV, MAX_FOV);
         }}
       >
         <color attach="background" args={['#e5e7eb']} />
@@ -653,6 +744,10 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
           wallMaterialImage={wallMaterialImage}
           floorMaterialImage={floorMaterialImage}
           isFirstPersonMode={isFirstPersonMode}
+          walkerRef={walkerRef}
+          viewYawRef={viewYawRef}
+          viewPitchRef={viewPitchRef}
+          fovRef={fovRef}
         />
       </Canvas>
     </div>
