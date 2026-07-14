@@ -170,16 +170,34 @@ export function WindowShape3D({ width, depth, height }) {
 
 // A flat slab plus a raised strip near one edge, like a duvet with its top
 // corner turned down.
+// A softly puffed duvet: a flattened body, a few gentle wrinkle ridges
+// across the top (half-buried cylinders — the flat box top clips off
+// everything below its surface, so only a rounded bump pokes through), and
+// a folded-back flap near one edge — reads as bedding draped over a
+// mattress rather than a stiff flat slab.
 export function BlanketShape3D({ width, depth, height, fill }) {
+  const bodyHeight = Math.max(height, 0.03);
+  const rippleCount = 3;
+  const rippleRadius = Math.min(bodyHeight * 1.1, depth * 0.06);
   const foldDepth = depth * 0.22;
+  const foldHeight = bodyHeight * 1.6;
   return (
     <group>
-      <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[0, bodyHeight / 2, 0]}>
+        <boxGeometry args={[width, bodyHeight, depth]} />
         <meshStandardMaterial color={fill} />
       </mesh>
-      <mesh position={[0, height * 1.4, -depth / 2 + foldDepth / 2]}>
-        <boxGeometry args={[width * 0.98, height * 0.8, foldDepth]} />
+      {Array.from({ length: rippleCount }).map((_, i) => {
+        const z = -depth / 2 + (depth / (rippleCount + 1)) * (i + 1);
+        return (
+          <mesh key={i} position={[0, bodyHeight - rippleRadius * 0.55, z]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[rippleRadius, rippleRadius, width * 0.9, 12]} />
+            <meshStandardMaterial color={fill} />
+          </mesh>
+        );
+      })}
+      <mesh position={[0, bodyHeight + foldHeight / 2, -depth / 2 + foldDepth / 2]}>
+        <boxGeometry args={[width * 0.98, foldHeight, foldDepth]} />
         <meshStandardMaterial color={fill} />
       </mesh>
     </group>
@@ -853,6 +871,41 @@ export function StandingACShape3D({ width, depth, height, fill }) {
   );
 }
 
+// A low elongated body with 5 round socket marks across the top and a cord
+// trailing off one end — reads as a multi-outlet power strip.
+export function PowerStripShape3D({ width, depth, height, fill }) {
+  const socketCount = 5;
+  const bodyHeight = Math.max(height * 0.5, 0.015);
+  const socketRadius = Math.min(depth, bodyHeight) * 0.32;
+  const cordLength = Math.max(width * 0.5, 0.15);
+  const cordRadius = Math.max(bodyHeight * 0.18, 0.004);
+  return (
+    <group>
+      <mesh position={[0, bodyHeight / 2, 0]}>
+        <boxGeometry args={[width, bodyHeight, depth]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      {Array.from({ length: socketCount }).map((_, i) => {
+        const x = -width / 2 + (width / (socketCount + 1)) * (i + 1);
+        return (
+          <mesh key={i} position={[x, bodyHeight + 0.001, 0]}>
+            <cylinderGeometry args={[socketRadius, socketRadius, 0.003, 12]} />
+            <meshStandardMaterial color="#111827" />
+          </mesh>
+        );
+      })}
+      <mesh position={[0, bodyHeight * 0.75, 0]}>
+        <boxGeometry args={[width * 0.1, bodyHeight * 0.25, depth * 0.5]} />
+        <meshStandardMaterial color="#DC2626" />
+      </mesh>
+      <mesh position={[width / 2 + cordLength / 2, bodyHeight * 0.4, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[cordRadius, cordRadius, cordLength, 8]} />
+        <meshStandardMaterial color="#1F2937" />
+      </mesh>
+    </group>
+  );
+}
+
 // Keyed by archetype name (not category id) — see productShapeCatalog.js
 // for the category -> archetype mapping.
 export const ARCHETYPE_COMPONENTS = {
@@ -883,6 +936,7 @@ export const ARCHETYPE_COMPONENTS = {
   plant: TreeShape3D,
   appliance: ApplianceShape3D,
   wall_mounted_ac: WallMountedACShape3D,
+  power_strip: PowerStripShape3D,
   standing_ac: StandingACShape3D,
   bed: BedShape3D,
   blanket: BlanketShape3D,

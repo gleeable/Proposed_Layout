@@ -162,6 +162,7 @@ const OFFICE_ELECTRONICS = [
   { id: 'server_rack', archetype: 'server_rack', keywords: ['서버랙', 'server rack'] },
   { id: 'network_rack', archetype: 'server_rack', keywords: ['네트워크랙', 'network rack'] },
   { id: 'router', archetype: 'appliance', keywords: ['공유기', 'router'] },
+  { id: 'power_strip', archetype: 'power_strip', keywords: ['콘센트', '멀티탭', '파워스트립', 'power strip', 'outlet strip', 'surge protector'] },
   { id: 'desk_lamp', archetype: 'lamp', keywords: ['스탠드조명', 'desk lamp'] },
   { id: 'floor_lamp', archetype: 'lamp', keywords: ['플로어램프', 'floor lamp'] },
   { id: 'reading_lamp', archetype: 'lamp', keywords: ['리딩램프', 'reading lamp'] },
