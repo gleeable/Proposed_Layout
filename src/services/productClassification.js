@@ -1,17 +1,17 @@
-// Categories the 3D view (Design3DView.jsx / ProductShape3D) knows how to
-// hand-draw. Keep this list in sync with PRODUCT_CATEGORY_KEYWORDS and the
-// ProductShape3D switch there.
-export const PRODUCT_SHAPE_CATEGORIES = [
-  'chair', 'table', 'sofa', 'shelf', 'cabinet', 'monitor', 'lamp', 'plant', 'appliance',
-  'bed', 'pillow', 'hairdryer', 'box',
-];
+// Categories the 3D view (Design3DView.jsx / ProductShape3D, via
+// productShapeArchetypes3D.jsx) knows how to hand-draw. Single source of
+// truth lives in src/domain/productShapeCatalog.js — the classification
+// prompt below, the keyword fallback, and the render lookup all read from it.
+import { PRODUCT_SHAPE_CATEGORIES } from '../domain/productShapeCatalog';
+
+export { PRODUCT_SHAPE_CATEGORIES };
 
 const MODEL = 'gemini-2.5-flash';
 const API_KEY = import.meta.env.VITE_GOOGLE_AI_STUDIO_APIKEY;
 const CLOUDFLARE_WORKER_URL = import.meta.env.VITE_CLOUDFLARE_WORKER_URL;
 
 function buildPrompt(productName) {
-  return `Classify the furniture/product named "${productName}" into exactly one of these categories: ${PRODUCT_SHAPE_CATEGORIES.join(', ')}. Reply with only the single category word in lowercase, nothing else. If none fit well, reply "box".`;
+  return `Classify the furniture/product named "${productName}" into exactly one of these categories: ${PRODUCT_SHAPE_CATEGORIES.join(', ')}. Reply with only the single category id in lowercase (categories may contain underscores, e.g. "drawer_chest" — reply with the full id), nothing else. Pick the single closest matching category even if imperfect; only reply "box" if truly nothing is remotely close.`;
 }
 
 function normalizeWorkerUrl(workerUrl) {
@@ -23,8 +23,10 @@ function isPlaceholderWorkerUrl(workerUrl) {
 }
 
 function extractCategory(text) {
-  const match = (text || '').toLowerCase().match(/[a-z]+/);
-  const category = match?.[0];
+  // Category ids can contain underscores (e.g. "drawer_chest") — [a-z]+
+  // alone would stop at the first underscore and never match those.
+  const match = (text || '').toLowerCase().match(/[a-z_]+/);
+  const category = match?.[0]?.replace(/^_+|_+$/g, '');
   return PRODUCT_SHAPE_CATEGORIES.includes(category) ? category : null;
 }
 

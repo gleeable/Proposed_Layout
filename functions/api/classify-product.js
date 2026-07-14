@@ -1,9 +1,6 @@
-const MODEL = 'gemini-2.5-flash';
+import { PRODUCT_SHAPE_CATEGORIES } from '../../src/domain/productShapeCatalog.js';
 
-// Keep in sync with src/services/productClassification.js.
-const PRODUCT_SHAPE_CATEGORIES = [
-  'chair', 'table', 'sofa', 'shelf', 'cabinet', 'monitor', 'lamp', 'plant', 'appliance', 'box',
-];
+const MODEL = 'gemini-2.5-flash';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +9,7 @@ const corsHeaders = {
 };
 
 function buildPrompt(productName) {
-  return `Classify the furniture/product named "${productName}" into exactly one of these categories: ${PRODUCT_SHAPE_CATEGORIES.join(', ')}. Reply with only the single category word in lowercase, nothing else. If none fit well, reply "box".`;
+  return `Classify the furniture/product named "${productName}" into exactly one of these categories: ${PRODUCT_SHAPE_CATEGORIES.join(', ')}. Reply with only the single category id in lowercase (categories may contain underscores, e.g. "drawer_chest" — reply with the full id), nothing else. Pick the single closest matching category even if imperfect; only reply "box" if truly nothing is remotely close.`;
 }
 
 function json(body, status = 200) {
@@ -26,8 +23,10 @@ function json(body, status = 200) {
 }
 
 function extractCategory(text) {
-  const match = (text || '').toLowerCase().match(/[a-z]+/);
-  const category = match?.[0];
+  // Category ids can contain underscores (e.g. "drawer_chest") — [a-z]+
+  // alone would stop at the first underscore and never match those.
+  const match = (text || '').toLowerCase().match(/[a-z_]+/);
+  const category = match?.[0]?.replace(/^_+|_+$/g, '');
   return PRODUCT_SHAPE_CATEGORIES.includes(category) ? category : null;
 }
 
