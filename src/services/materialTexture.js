@@ -14,10 +14,15 @@ function drawSolid(ctx, [color]) {
   fillBackground(ctx, color);
 }
 
-// Horizontal wood-grain streaks of varying opacity/thickness.
+// Horizontal wood-grain streaks of varying opacity/thickness. The x-wave
+// frequency is chosen so it completes a whole number of cycles across SIZE
+// (sin(0) === sin(2*PI)) — otherwise the streak's left/right edges land at
+// different phases and THREE's RepeatWrapping shows a visible seam every
+// tile instead of one continuous floor.
 function drawGrain(ctx, [base, dark]) {
   fillBackground(ctx, base);
   const lineCount = 22;
+  const xFrequency = (Math.PI * 2) / SIZE;
   for (let i = 0; i < lineCount; i += 1) {
     const y = (i / lineCount) * SIZE + Math.sin(i * 1.7) * 2;
     ctx.strokeStyle = dark;
@@ -26,17 +31,19 @@ function drawGrain(ctx, [base, dark]) {
     ctx.beginPath();
     ctx.moveTo(0, y);
     for (let x = 0; x <= SIZE; x += 16) {
-      ctx.lineTo(x, y + Math.sin((x + i * 30) * 0.05) * 3);
+      ctx.lineTo(x, y + Math.sin(x * xFrequency + i * 30) * 3);
     }
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }
 
-// Simple crosshatch weave for fabric/carpet.
+// Simple crosshatch weave for fabric/carpet. Step must evenly divide SIZE so
+// the diagonal grid realigns exactly at each tile edge instead of showing a
+// visible break.
 function drawWeave(ctx, [base, accent]) {
   fillBackground(ctx, base);
-  const step = 6;
+  const step = 8;
   ctx.strokeStyle = accent;
   ctx.globalAlpha = 0.5;
   ctx.lineWidth = 1;
@@ -53,23 +60,29 @@ function drawWeave(ctx, [base, accent]) {
   ctx.globalAlpha = 1;
 }
 
-// Diagonal marble veins over a base color.
+// Wavy marble veins over a base color. Each vein's horizontal wander is one
+// full sine cycle over the tile height, so its position at y=0 exactly
+// matches y=SIZE (seamless top/bottom); drawing each vein again shifted a
+// full tile-width left/right covers the seamless left/right case too.
 function drawMarble(ctx, [base, vein]) {
   fillBackground(ctx, base);
   ctx.strokeStyle = vein;
   ctx.globalAlpha = 0.5;
-  for (let i = 0; i < 6; i += 1) {
+  const veinCount = 6;
+  const step = SIZE / 16;
+  for (let i = 0; i < veinCount; i += 1) {
+    const x0 = Math.random() * SIZE;
+    const amplitude = 10 + Math.random() * 15;
+    const phase = Math.random() * Math.PI * 2;
     ctx.lineWidth = 1 + Math.random() * 2;
-    ctx.beginPath();
-    let x = Math.random() * SIZE;
-    let y = 0;
-    ctx.moveTo(x, y);
-    while (y < SIZE) {
-      x += (Math.random() - 0.5) * 30;
-      y += SIZE / 8;
-      ctx.lineTo(x, y);
+    for (const dx of [-SIZE, 0, SIZE]) {
+      ctx.beginPath();
+      for (let y = 0; y <= SIZE; y += step) {
+        const x = x0 + dx + Math.sin((y / SIZE) * Math.PI * 2 + phase) * amplitude;
+        if (y === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }
@@ -92,10 +105,12 @@ function drawGrid(ctx, [base], cols = 4) {
   }
 }
 
-// Offset brick/subway courses.
+// Offset brick/subway courses. Row count must evenly divide SIZE (unlike
+// the original 6) so course lines land on whole pixels and repeat without a
+// visible gap/overlap at the tile seam.
 function drawBrick(ctx, [base]) {
   fillBackground(ctx, base);
-  const rows = 6;
+  const rows = 8;
   const rowH = SIZE / rows;
   ctx.strokeStyle = 'rgba(0,0,0,0.15)';
   ctx.lineWidth = 2;
@@ -115,16 +130,29 @@ function drawBrick(ctx, [base]) {
   }
 }
 
-// Random speckles for concrete/terrazzo/travertine.
+// Random speckles for concrete/terrazzo/travertine. A dot near an edge is
+// also drawn shifted a full tile-width/height, so it's still visible on the
+// opposite edge — otherwise dots get cut off at the border and the tile
+// boundary reads as a visible seam instead of scattered speckle.
 function drawSpeckle(ctx, [base, accent]) {
   fillBackground(ctx, base);
   for (let i = 0; i < 90; i += 1) {
+    const x = Math.random() * SIZE;
+    const y = Math.random() * SIZE;
+    const r = 1 + Math.random() * 4;
     ctx.fillStyle = accent;
     ctx.globalAlpha = 0.25 + Math.random() * 0.5;
-    const r = 1 + Math.random() * 4;
-    ctx.beginPath();
-    ctx.arc(Math.random() * SIZE, Math.random() * SIZE, r, 0, Math.PI * 2);
-    ctx.fill();
+    for (const dx of [-SIZE, 0, SIZE]) {
+      for (const dy of [-SIZE, 0, SIZE]) {
+        const wx = x + dx;
+        const wy = y + dy;
+        if (wx > -r && wx < SIZE + r && wy > -r && wy < SIZE + r) {
+          ctx.beginPath();
+          ctx.arc(wx, wy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
   }
   ctx.globalAlpha = 1;
 }

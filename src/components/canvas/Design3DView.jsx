@@ -475,8 +475,14 @@ function Person({ footprint, floorObjects, keysHeldRef }) {
   );
 }
 
+// How many real-world meters one swatch tile covers on the floor. Bigger
+// than 1 (the walls' scale) so a large floor isn't visibly chopped into a
+// dense grid of small repeats — combined with the now-seamless patterns in
+// materialTexture.js, this reads as one continuous floor rather than tiles.
+const FLOOR_TILE_SIZE_M = 2;
+
 function Floor({ footprint, materialImage }) {
-  const texture = useSurfaceTexture(materialImage, footprint.widthM, footprint.depthM);
+  const texture = useSurfaceTexture(materialImage, footprint.widthM / FLOOR_TILE_SIZE_M, footprint.depthM / FLOOR_TILE_SIZE_M);
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[footprint.widthM, footprint.depthM]} />
