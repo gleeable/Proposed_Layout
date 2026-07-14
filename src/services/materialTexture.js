@@ -145,7 +145,11 @@ export function renderMaterialCanvas(material) {
   canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
   const draw = PATTERN_DRAWERS[material.pattern] || drawSolid;
-  draw(ctx, material.colors);
+  // material.colors is only guaranteed on built-in catalog entries — guard
+  // against being handed something else (e.g. a custom material whose
+  // imageDataUrl failed to restore from IndexedDB) so a bad swatch can't
+  // throw and take the whole render tree down with it.
+  draw(ctx, material.colors || ['#D1D5DB']);
   return canvas;
 }
 

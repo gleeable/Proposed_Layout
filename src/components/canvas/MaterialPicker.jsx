@@ -16,6 +16,17 @@ function getBuiltinThumbnail(material) {
   return thumbnailCache.get(material.id);
 }
 
+// Shown in place of a custom material's photo when it failed to restore from
+// IndexedDB (e.g. evicted under storage pressure) — computed lazily so this
+// module has no side effect just from being imported.
+let missingImageThumbnail = null;
+function getMissingImageThumbnail() {
+  if (!missingImageThumbnail) {
+    missingImageThumbnail = renderMaterialThumbnail({ pattern: 'solid', colors: ['#D1D5DB'] });
+  }
+  return missingImageThumbnail;
+}
+
 export function MaterialPicker() {
   const [activeCategory, setActiveCategory] = useState('wallpaper');
   const [requestName, setRequestName] = useState('');
@@ -72,8 +83,13 @@ export function MaterialPicker() {
 
       <div className="material-picker__grid">
         {items.map((material) => {
-          const isCustom = Boolean(material.imageDataUrl);
-          const thumb = isCustom ? material.imageDataUrl : getBuiltinThumbnail(material);
+          // Built-in catalog entries always carry a `pattern` (see
+          // materialCatalog.js); custom ones never do. Deciding this from
+          // imageDataUrl instead would misroute a custom material whose
+          // image failed to restore from IndexedDB into the built-in
+          // canvas renderer, which then crashes on the missing pattern/colors.
+          const isCustom = !material.pattern;
+          const thumb = isCustom ? (material.imageDataUrl || getMissingImageThumbnail()) : getBuiltinThumbnail(material);
           const isWall = wallMaterialId === material.id;
           const isFloor = floorMaterialId === material.id;
           return (
