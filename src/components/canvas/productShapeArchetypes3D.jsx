@@ -127,9 +127,13 @@ export function DoorShape3D({ width, depth, height }) {
   );
 }
 
-// A wall-mounted pane: an outer frame box, an inset semi-transparent glass
-// slab, and a thin mullion bar splitting it — reads as a window, not a wall.
-export function WindowShape3D({ width, depth, height, fill }) {
+// A wall-mounted pane: an outer frame box, an inset glass slab, and a thin
+// mullion bar splitting it — reads as a window, not a wall. The glass
+// deliberately ignores `fill` (the object's arbitrary product/facility
+// color has nothing to do with what's outside) and instead glows a bright,
+// slightly warm sky-white so the window always reads as a bright opening to
+// the outside rather than a flat tinted panel.
+export function WindowShape3D({ width, depth, height }) {
   const frameThickness = Math.max(Math.min(width, height) * 0.06, 0.02);
   return (
     <group>
@@ -139,7 +143,12 @@ export function WindowShape3D({ width, depth, height, fill }) {
       </mesh>
       <mesh position={[0, height / 2, 0]}>
         <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), Math.max(height - frameThickness * 2, 0.02), depth * 0.5]} />
-        <meshStandardMaterial color={fill} transparent opacity={0.55} />
+        <meshStandardMaterial
+          color="#F8FBFF"
+          emissive="#DCEBFF"
+          emissiveIntensity={1.2}
+          toneMapped={false}
+        />
       </mesh>
       <mesh position={[0, height / 2, 0]}>
         <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), frameThickness * 0.6, depth * 0.7]} />
@@ -859,6 +868,7 @@ export const ARCHETYPE_COMPONENTS = {
   pendant_lamp: PendantLampShape3D,
   floor_fan: FloorFanShape3D,
   coat_rack: CoatRackShape3D,
+  window: WindowShape3D,
   curtain: CurtainShape3D,
   plant: TreeShape3D,
   appliance: ApplianceShape3D,

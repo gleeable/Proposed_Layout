@@ -216,6 +216,7 @@ const LIGHTING_DECOR = [
   { id: 'area_rug', archetype: 'rug', keywords: ['러그', 'area rug', 'rug'] },
   { id: 'yoga_mat', archetype: 'rug', keywords: ['요가매트', 'yoga mat'] },
   { id: 'door_mat', archetype: 'rug', keywords: ['현관매트', 'door mat'] },
+  { id: 'window', archetype: 'window', keywords: ['창문', '윈도우', 'window'] },
   { id: 'curtain', archetype: 'curtain', keywords: ['커튼', 'curtain'] },
   { id: 'shower_curtain', archetype: 'curtain', keywords: ['샤워커튼', 'shower curtain'] },
   { id: 'tapestry', archetype: 'curtain', keywords: ['태피스트리', 'tapestry'] },
