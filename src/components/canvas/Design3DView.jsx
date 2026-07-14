@@ -423,13 +423,15 @@ function Person({ footprint, floorObjects, keysHeldRef, isFirstPersonMode, walke
       const halfD = footprint.depthM / 2 - PERSON_RADIUS_M;
 
       // Resolve x and z separately so walking diagonally into a wall slides
-      // along it instead of just stopping dead.
+      // along it instead of just stopping dead. First-person mode skips
+      // object collision entirely (noclip through furniture/products) —
+      // only the building's outer footprint (the clamp above) still holds.
       const nextX = clamp(posRef.current.x + dx * step, -halfW, halfW);
-      if (!collidesWithAny(nextX, posRef.current.z, blockingObjects, footprint)) {
+      if (isFirstPersonMode || !collidesWithAny(nextX, posRef.current.z, blockingObjects, footprint)) {
         posRef.current.x = nextX;
       }
       const nextZ = clamp(posRef.current.z + dz * step, -halfD, halfD);
-      if (!collidesWithAny(posRef.current.x, nextZ, blockingObjects, footprint)) {
+      if (isFirstPersonMode || !collidesWithAny(posRef.current.x, nextZ, blockingObjects, footprint)) {
         posRef.current.z = nextZ;
       }
       headingRef.current = Math.atan2(dx, dz);
