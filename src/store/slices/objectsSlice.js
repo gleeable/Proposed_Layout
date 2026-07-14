@@ -292,7 +292,7 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   pasteClipboard: () => {
-    const { clipboard, objects } = get();
+    const { clipboard, objects, activeFloorId } = get();
     if (clipboard.length === 0) return [];
 
     get().pushHistorySnapshot();
@@ -300,9 +300,12 @@ export const createObjectsSlice = (set, get) => ({
     const isPersistedGroup = groupIds.size === 1 && clipboard.every((o) => o.groupId);
     const newGroupId = clipboard.length > 1 && isPersistedGroup ? createId() : null;
 
+    // Paste onto whichever floor is active now, not the floor the clipboard
+    // was copied from — lets copy-on-floor-A, switch-to-floor-B, paste work.
     const pasted = clipboard.map((o) => ({
       ...o,
       id: createId(),
+      floorId: activeFloorId,
       x: o.x + DUPLICATE_OFFSET_M,
       y: o.y + DUPLICATE_OFFSET_M,
       groupId: newGroupId,

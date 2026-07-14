@@ -3,9 +3,18 @@ import { create } from 'zustand';
 import { createObjectsSlice } from './objectsSlice';
 import { createCatalogSlice } from './catalogSlice';
 import { createHistorySlice } from './historySlice';
+import { createFloorsSlice } from './floorsSlice';
 
 function makeStore() {
   return create((...a) => ({ ...createObjectsSlice(...a), ...createHistorySlice(...a) }));
+}
+
+function makeStoreWithFloors() {
+  return create((...a) => ({
+    ...createObjectsSlice(...a),
+    ...createHistorySlice(...a),
+    ...createFloorsSlice(...a),
+  }));
 }
 
 function makeStoreWithCatalog() {
@@ -29,6 +38,29 @@ describe('objectsSlice', () => {
     expect(dup.floorId).toBe('floor-1');
     expect(dup.x).not.toBe(original.x);
     expect(dup.y).not.toBe(original.y);
+  });
+
+  test('pasteClipboard lands on the currently active floor, not the copied-from floor', () => {
+    const store = makeStoreWithFloors();
+    store.getState().setActiveFloor('floor-1');
+    const id = store.getState().addGeneric('floor-1');
+
+    store.getState().copySelection([id]);
+    store.getState().setActiveFloor('floor-2');
+    const [pastedId] = store.getState().pasteClipboard();
+
+    expect(store.getState().objects.find((o) => o.id === pastedId).floorId).toBe('floor-2');
+  });
+
+  test('pasteClipboard on the same floor still lands there', () => {
+    const store = makeStoreWithFloors();
+    store.getState().setActiveFloor('floor-1');
+    const id = store.getState().addGeneric('floor-1');
+
+    store.getState().copySelection([id]);
+    const [pastedId] = store.getState().pasteClipboard();
+
+    expect(store.getState().objects.find((o) => o.id === pastedId).floorId).toBe('floor-1');
   });
 
   test('moveObjectsToFloor updates floorId', () => {
