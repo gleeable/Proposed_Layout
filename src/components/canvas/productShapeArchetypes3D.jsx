@@ -321,13 +321,18 @@ export function RugShape3D({ width, depth, height, fill }) {
 // frames, whiteboards, wall clocks, partitions.
 export function MirrorFrameShape3D({ width, depth, height, fill }) {
   const frameThickness = Math.max(Math.min(width, height) * 0.05, 0.015);
+  // Mirrors/partitions/whiteboards are thin panels regardless of how deep a
+  // footprint was drawn for them in 2D — using the raw `depth` here would
+  // render a solid block whenever that footprint isn't already thin, which
+  // reads as just another box instead of a wall-mounted pane.
+  const panelDepth = Math.min(depth, Math.max(Math.min(width, height) * 0.06, 0.03));
   return (
     <group>
       <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[width, height, depth]} />
+        <boxGeometry args={[width, height, panelDepth]} />
         <meshStandardMaterial color="#374151" />
       </mesh>
-      <mesh position={[0, height / 2, depth / 2 + 0.002]}>
+      <mesh position={[0, height / 2, panelDepth / 2 + 0.002]}>
         <boxGeometry args={[Math.max(width - frameThickness * 2, 0.02), Math.max(height - frameThickness * 2, 0.02), 0.004]} />
         <meshStandardMaterial color={fill} metalness={0.3} roughness={0.2} />
       </mesh>
