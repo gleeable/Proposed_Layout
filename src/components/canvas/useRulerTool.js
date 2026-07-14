@@ -3,6 +3,14 @@ import { useAppStore } from '../../store/useAppStore';
 import { createId } from '../../domain/ids';
 import { screenToWorld } from './canvasGeometry';
 
+// While Ctrl/Cmd is held, the in-progress segment snaps to whichever axis
+// (horizontal or vertical) it's closer to, measured from the start point.
+function snapToAxis(start, point) {
+  const dx = point.x - start.x;
+  const dy = point.y - start.y;
+  return Math.abs(dx) >= Math.abs(dy) ? { x: point.x, y: start.y } : { x: start.x, y: point.y };
+}
+
 // Click-to-measure flow, independent of object selection: while ruler mode
 // is active, clicks alternate between placing a segment's start point and
 // placing its end point. Each start/end pair is finalized as a segment (its
@@ -10,7 +18,7 @@ import { screenToWorld } from './canvasGeometry';
 // unconnected segment. Right-click (PlacedObjectShape/DesignCanvas route
 // their contextmenu here) and Escape both clear every measured segment;
 // turning the tool off also clears them.
-export function useRulerTool({ scale, offsetX, offsetY }) {
+export function useRulerTool({ scale, offsetX, offsetY, ctrlRef }) {
   const isRulerActive = useAppStore((s) => s.isRulerActive);
   const toggleRulerMode = useAppStore((s) => s.toggleRulerMode);
 
@@ -47,7 +55,8 @@ export function useRulerTool({ scale, offsetX, offsetY }) {
     if (!isRulerActive || !pendingStart) return;
     const pointer = e.target.getStage()?.getPointerPosition();
     if (!pointer) return;
-    setPreviewPoint(screenToWorld(pointer.x, pointer.y, scale, offsetX, offsetY));
+    const world = screenToWorld(pointer.x, pointer.y, scale, offsetX, offsetY);
+    setPreviewPoint(ctrlRef?.current ? snapToAxis(pendingStart, world) : world);
   }
 
   // Returns true when it consumed the click (caller should skip its own
@@ -62,7 +71,8 @@ export function useRulerTool({ scale, offsetX, offsetY }) {
       setPendingStart(world);
       setPreviewPoint(world);
     } else {
-      setSegments((prev) => [...prev, { id: createId(), start: pendingStart, end: world }]);
+      const end = ctrlRef?.current ? snapToAxis(pendingStart, world) : world;
+      setSegments((prev) => [...prev, { id: createId(), start: pendingStart, end }]);
       setPendingStart(null);
       setPreviewPoint(null);
     }

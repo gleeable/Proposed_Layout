@@ -220,7 +220,7 @@ export function DesignCanvas() {
   const offsetY = baseOffsetY + viewport.pan.y;
 
   const placement = useProductPlacement({ scale, offsetX, offsetY, activeFloorId });
-  const ruler = useRulerTool({ scale, offsetX, offsetY });
+  const ruler = useRulerTool({ scale, offsetX, offsetY, ctrlRef });
   const copyDrag = useProductCopyDrag({
     getNode,
     scale,
