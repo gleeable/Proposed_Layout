@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { metersToMm, mmToMeters } from './canvasGeometry';
 import './SelectionActionMenu.css';
+
+const VIEWPORT_MARGIN_PX = 8;
 
 // Right-click menu for a marquee-captured (or shift-)selected group of
 // objects — bulk actions that don't need the single-object detail modal.
@@ -18,6 +20,27 @@ export function SelectionActionMenu({ ids, x, y, onClose }) {
   const setSelectedIds = useAppStore((s) => s.setSelectedIds);
 
   const [openPanel, setOpenPanel] = useState(null);
+  const menuRef = useRef(null);
+  const [position, setPosition] = useState({ left: x, top: y, maxHeight: null });
+
+  // The menu grows taller as panels (색깔/치수/높이) expand, so it's re-clamped
+  // to the viewport every time openPanel changes, not just on the initial
+  // right-click position — otherwise expanding a panel near the bottom/right
+  // edge pushes its "적용" button off-screen and un-clickable. maxHeight +
+  // the CSS overflow-y below is a fallback for viewports too short to fit
+  // the menu even at top=margin.
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const maxLeft = Math.max(VIEWPORT_MARGIN_PX, window.innerWidth - rect.width - VIEWPORT_MARGIN_PX);
+    const maxTop = Math.max(VIEWPORT_MARGIN_PX, window.innerHeight - rect.height - VIEWPORT_MARGIN_PX);
+    setPosition({
+      left: Math.min(x, maxLeft),
+      top: Math.min(y, maxTop),
+      maxHeight: window.innerHeight - VIEWPORT_MARGIN_PX * 2,
+    });
+  }, [x, y, openPanel]);
 
   const selected = objects.filter((o) => ids.includes(o.id));
   const canGroup = ids.length >= 2;
@@ -87,8 +110,9 @@ export function SelectionActionMenu({ ids, x, y, onClose }) {
   return (
     <div className="selection-action-menu__backdrop" onMouseDown={onClose} onContextMenu={(e) => e.preventDefault()}>
       <div
+        ref={menuRef}
         className="selection-action-menu"
-        style={{ left: x, top: y }}
+        style={{ left: position.left, top: position.top, maxHeight: position.maxHeight ?? undefined }}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="selection-action-menu__title">{ids.length}개 오브젝트 선택됨</div>

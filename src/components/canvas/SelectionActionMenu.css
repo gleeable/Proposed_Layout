@@ -15,6 +15,7 @@
   flex-direction: column;
   gap: 2px;
   font-size: 13px;
+  overflow-y: auto;
 }
 
 .selection-action-menu__title {
