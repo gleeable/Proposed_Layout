@@ -19,6 +19,12 @@ export const FACILITY_CATALOG = [
   { category: 'bed', label: '침대', widthM: 1.5, depthM: 2, fill: '#F5F5F4', verticalHeightMm: 500 },
   { category: 'blanket', label: '이불', widthM: 1.5, depthM: 2, fill: '#BFDBFE', verticalHeightMm: 60 },
   { category: 'pillow', label: '베개', widthM: 0.5, depthM: 0.35, fill: '#FAFAF9', verticalHeightMm: 150 },
+  // A ramp/wedge: flat on the floor, rising along its width to verticalHeightMm
+  // at the opposite edge. Its incline angle isn't a separate stored field —
+  // it falls out of widthM vs. verticalHeightMm, so dragging the resize
+  // handles or editing the object's 가로/높이 in the detail modal is how you
+  // adjust the angle.
+  { category: 'triangle', label: '삼각형', widthM: 3, depthM: 1.2, fill: '#FDBA74' },
 ];
 
 export function getFacilityTemplate(category) {

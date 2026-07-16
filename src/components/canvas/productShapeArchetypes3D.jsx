@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import * as THREE from 'three';
 
 // Parametric "archetype" shapes: hand-drawn Three.js silhouettes that stand
@@ -15,6 +16,29 @@ export function PlainBox({ width, depth, height, fill }) {
     <mesh position={[0, height / 2, 0]}>
       <boxGeometry args={[width, height, depth]} />
       <meshStandardMaterial color={fill} />
+    </mesh>
+  );
+}
+
+// A right-triangle wedge extruded along its depth: flat base on the floor,
+// a vertical rise on one edge, and the hypotenuse forming the sloped
+// surface — used for ramps/inclines. There's no separate "angle" prop; the
+// incline falls straight out of width vs. height, so resizing the object
+// (already possible for every archetype here) is how the angle changes.
+export function TriangleShape3D({ width, depth, height, fill }) {
+  const geometry = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.moveTo(-width / 2, 0);
+    shape.lineTo(width / 2, 0);
+    shape.lineTo(-width / 2, height);
+    shape.closePath();
+    const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+    geo.translate(0, 0, -depth / 2);
+    return geo;
+  }, [width, depth, height]);
+  return (
+    <mesh geometry={geometry}>
+      <meshStandardMaterial color={fill} side={THREE.DoubleSide} />
     </mesh>
   );
 }

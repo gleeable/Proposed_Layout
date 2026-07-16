@@ -22,15 +22,16 @@ const EXPECTED_CATEGORIES = [
   'bed',
   'blanket',
   'pillow',
+  'triangle',
 ];
 
 describe('facility catalog', () => {
-  test('contains all 20 required facility categories', () => {
+  test('contains all 21 required facility categories', () => {
     const categories = FACILITY_CATALOG.map((item) => item.category);
     EXPECTED_CATEGORIES.forEach((category) => {
       expect(categories).toContain(category);
     });
-    expect(FACILITY_CATALOG).toHaveLength(20);
+    expect(FACILITY_CATALOG).toHaveLength(21);
   });
 
   test('every facility has a positive default size', () => {

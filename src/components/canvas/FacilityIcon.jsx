@@ -4,7 +4,7 @@ import { Arc, Arrow, Circle, Line, Rect } from 'react-konva';
 // plain colored rectangle. Anything not in this set falls back to the
 // generic Rect/Image rendering in PlacedObjectShape/PlacementPreview.
 export const SHAPED_FACILITY_CATEGORIES = new Set([
-  'stairs', 'tree', 'table', 'chair', 'door', 'auto_door', 'window', 'bed', 'blanket', 'pillow',
+  'stairs', 'tree', 'table', 'chair', 'door', 'auto_door', 'window', 'bed', 'blanket', 'pillow', 'triangle',
 ]);
 
 function StairsIcon({ pxW, pxH, fill, isSelected }) {
@@ -284,6 +284,29 @@ function PillowIcon({ pxW, pxH, fill, isSelected }) {
   );
 }
 
+// Right-triangle wedge symbol: flat base along the bottom (floor) edge,
+// vertical rise on the left, hypotenuse showing the incline. There's no
+// separate "angle" control — resizing the footprint (width) and the
+// object's vertical height in the detail modal changes the rise/run ratio,
+// which is the incline angle.
+function TriangleIcon({ pxW, pxH, fill, isSelected }) {
+  const halfW = pxW / 2;
+  const halfH = pxH / 2;
+  return (
+    <>
+      <Line
+        points={[-halfW, halfH, halfW, halfH, -halfW, -halfH]}
+        closed
+        fill={fill}
+        stroke={isSelected ? '#4338ca' : '#92400E'}
+        strokeWidth={isSelected ? 2 : 1}
+      />
+      {/* invisible hit area so the whole footprint is clickable/draggable, not just the triangular fill */}
+      <Rect x={-halfW} y={-halfH} width={pxW} height={pxH} fill="transparent" />
+    </>
+  );
+}
+
 export function FacilityIcon({ category, pxW, pxH, fill, isSelected }) {
   switch (category) {
     case 'stairs':
@@ -306,6 +329,8 @@ export function FacilityIcon({ category, pxW, pxH, fill, isSelected }) {
       return <BlanketIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
     case 'pillow':
       return <PillowIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
+    case 'triangle':
+      return <TriangleIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
     default:
       return null;
   }

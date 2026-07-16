@@ -17,6 +17,7 @@ import {
   BedShape3D,
   BlanketShape3D,
   PillowShape3D,
+  TriangleShape3D,
   ARCHETYPE_COMPONENTS,
 } from './productShapeArchetypes3D';
 import './Design3DView.css';
@@ -42,7 +43,7 @@ const CLICK_DRAG_THRESHOLD_PX = 6; // pointer movement below this counts as a cl
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const SHAPED_3D_CATEGORIES = new Set([
-  'stairs', 'tree', 'table', 'chair', 'door', 'auto_door', 'window', 'bed', 'blanket', 'pillow',
+  'stairs', 'tree', 'table', 'chair', 'door', 'auto_door', 'window', 'bed', 'blanket', 'pillow', 'triangle',
 ]);
 
 // There's no real geometry to draw the product's actual look, so this
@@ -273,6 +274,8 @@ function FacilityShape3D({ category, width, depth, height, fill }) {
       return <BlanketShape3D width={width} depth={depth} height={height} fill={fill} />;
     case 'pillow':
       return <PillowShape3D width={width} depth={depth} height={height} fill={fill} />;
+    case 'triangle':
+      return <TriangleShape3D width={width} depth={depth} height={height} fill={fill} />;
     default:
       return <PlainBox width={width} depth={depth} height={height} fill={fill} />;
   }
