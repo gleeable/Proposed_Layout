@@ -4,7 +4,7 @@ import { Arc, Arrow, Circle, Line, Rect } from 'react-konva';
 // plain colored rectangle. Anything not in this set falls back to the
 // generic Rect/Image rendering in PlacedObjectShape/PlacementPreview.
 export const SHAPED_FACILITY_CATEGORIES = new Set([
-  'stairs', 'tree', 'table', 'chair', 'door', 'window', 'bed', 'blanket', 'pillow',
+  'stairs', 'tree', 'table', 'chair', 'door', 'auto_door', 'window', 'bed', 'blanket', 'pillow',
 ]);
 
 function StairsIcon({ pxW, pxH, fill, isSelected }) {
@@ -154,6 +154,31 @@ function DoorIcon({ pxW, pxH, isSelected }) {
   );
 }
 
+// Top-down automatic sliding-door symbol: a header strip for the motor/
+// sensor housing above the opening, plus two glass panels split by a dashed
+// center line where they slide past each other — no swing arc, unlike
+// DoorIcon (automatic doors don't swing).
+function AutoDoorIcon({ pxW, pxH, fill, isSelected }) {
+  const halfW = pxW / 2;
+  const halfH = pxH / 2;
+  const strokeColor = isSelected ? '#4338ca' : '#0369A1';
+  return (
+    <>
+      <Rect
+        x={-halfW}
+        y={-halfH}
+        width={pxW}
+        height={pxH}
+        fill={fill}
+        stroke={strokeColor}
+        strokeWidth={isSelected ? 2 : 1}
+      />
+      <Line points={[0, -halfH, 0, halfH]} stroke={strokeColor} strokeWidth={1} dash={[3, 2]} listening={false} />
+      <Line points={[-halfW, -halfH - 3, halfW, -halfH - 3]} stroke="#9CA3AF" strokeWidth={2} listening={false} />
+    </>
+  );
+}
+
 // Top-down architectural window symbol: the wall-opening line plus the
 // double "glass" lines running through it, no swing arc (windows don't open
 // like doors do).
@@ -271,6 +296,8 @@ export function FacilityIcon({ category, pxW, pxH, fill, isSelected }) {
       return <ChairIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
     case 'door':
       return <DoorIcon pxW={pxW} pxH={pxH} isSelected={isSelected} />;
+    case 'auto_door':
+      return <AutoDoorIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
     case 'window':
       return <WindowIcon pxW={pxW} pxH={pxH} fill={fill} isSelected={isSelected} />;
     case 'bed':

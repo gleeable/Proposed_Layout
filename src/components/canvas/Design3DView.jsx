@@ -12,6 +12,7 @@ import {
   TableShape3D,
   ChairShape3D,
   DoorShape3D,
+  AutoDoorShape3D,
   WindowShape3D,
   BedShape3D,
   BlanketShape3D,
@@ -41,7 +42,7 @@ const CLICK_DRAG_THRESHOLD_PX = 6; // pointer movement below this counts as a cl
 
 const ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const SHAPED_3D_CATEGORIES = new Set([
-  'stairs', 'tree', 'table', 'chair', 'door', 'window', 'bed', 'blanket', 'pillow',
+  'stairs', 'tree', 'table', 'chair', 'door', 'auto_door', 'window', 'bed', 'blanket', 'pillow',
 ]);
 
 // There's no real geometry to draw the product's actual look, so this
@@ -262,6 +263,8 @@ function FacilityShape3D({ category, width, depth, height, fill }) {
       return <ChairShape3D width={width} depth={depth} height={height} fill={fill} />;
     case 'door':
       return <DoorShape3D width={width} depth={depth} height={height} />;
+    case 'auto_door':
+      return <AutoDoorShape3D width={width} depth={depth} height={height} />;
     case 'window':
       return <WindowShape3D width={width} depth={depth} height={height} fill={fill} />;
     case 'bed':

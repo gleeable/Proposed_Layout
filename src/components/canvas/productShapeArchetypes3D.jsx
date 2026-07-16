@@ -127,6 +127,34 @@ export function DoorShape3D({ width, depth, height }) {
   );
 }
 
+// A header box (motor/sensor housing) above the opening, plus two glass
+// panels centered side by side with a small gap where they slide past each
+// other — unlike DoorShape3D's single hinged leaf, this door doesn't swing.
+export function AutoDoorShape3D({ width, depth, height }) {
+  const headerHeight = Math.max(height * 0.12, 0.1);
+  const doorHeight = Math.max(height - headerHeight, 0.3);
+  const frameDepth = Math.min(depth, Math.max(Math.min(width, height) * 0.1, 0.04));
+  const glassDepth = frameDepth + 0.01;
+  const gap = Math.max(width * 0.015, 0.01);
+  const panelWidth = Math.max(width / 2 - gap / 2, 0.05);
+  return (
+    <group>
+      <mesh position={[0, doorHeight + headerHeight / 2, 0]}>
+        <boxGeometry args={[width, headerHeight, Math.max(depth, frameDepth)]} />
+        <meshStandardMaterial color="#9CA3AF" />
+      </mesh>
+      <mesh position={[-(panelWidth / 2 + gap / 2), doorHeight / 2, 0]}>
+        <boxGeometry args={[panelWidth, doorHeight, glassDepth]} />
+        <meshStandardMaterial color="#F8FBFF" emissive="#DCEBFF" emissiveIntensity={1.2} toneMapped={false} transparent opacity={0.55} />
+      </mesh>
+      <mesh position={[panelWidth / 2 + gap / 2, doorHeight / 2, 0]}>
+        <boxGeometry args={[panelWidth, doorHeight, glassDepth]} />
+        <meshStandardMaterial color="#F8FBFF" emissive="#DCEBFF" emissiveIntensity={1.2} toneMapped={false} transparent opacity={0.55} />
+      </mesh>
+    </group>
+  );
+}
+
 // A wall-mounted pane: an outer frame box, an inset glass slab, and a thin
 // mullion bar splitting it — reads as a window, not a wall. The glass
 // deliberately ignores `fill` (the object's arbitrary product/facility

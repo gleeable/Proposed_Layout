@@ -14,6 +14,7 @@ export const FACILITY_CATALOG = [
   { category: 'table', label: '테이블', widthM: 1.2, depthM: 0.8, fill: '#D6A77A' },
   { category: 'chair', label: '의자', widthM: 0.5, depthM: 0.5, fill: '#E7E5E4' },
   { category: 'door', label: '문', widthM: 0.9, depthM: 0.9, fill: '#D6D3D1' },
+  { category: 'auto_door', label: '자동문', widthM: 1.5, depthM: 0.2, fill: '#7DD3FC', verticalHeightMm: 2100 },
   { category: 'window', label: '창문', widthM: 1.2, depthM: 0.15, fill: '#BFDBFE', verticalHeightMm: 1200, elevationMm: 900 },
   { category: 'bed', label: '침대', widthM: 1.5, depthM: 2, fill: '#F5F5F4', verticalHeightMm: 500 },
   { category: 'blanket', label: '이불', widthM: 1.5, depthM: 2, fill: '#BFDBFE', verticalHeightMm: 60 },
