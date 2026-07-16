@@ -14,6 +14,7 @@ export function SelectionActionMenu({ ids, x, y, onClose }) {
   const removeObjects = useAppStore((s) => s.removeObjects);
   const updateSelectionColor = useAppStore((s) => s.updateSelectionColor);
   const updateSelectionSize = useAppStore((s) => s.updateSelectionSize);
+  const updateSelectionVerticalHeight = useAppStore((s) => s.updateSelectionVerticalHeight);
   const setSelectedIds = useAppStore((s) => s.setSelectedIds);
 
   const [openPanel, setOpenPanel] = useState(null);
@@ -24,6 +25,7 @@ export function SelectionActionMenu({ ids, x, y, onClose }) {
   const first = selected[0];
   const [widthMm, setWidthMm] = useState(() => Math.round(metersToMm(first?.width ?? 1)));
   const [depthMm, setDepthMm] = useState(() => Math.round(metersToMm(first?.height ?? 1)));
+  const [heightMm, setHeightMm] = useState(() => Math.round(first?.verticalHeightMm ?? 800));
 
   useEffect(() => {
     function handleKeyDown(e) {
@@ -70,6 +72,14 @@ export function SelectionActionMenu({ ids, x, y, onClose }) {
     const d = Number(depthMm);
     if (w > 0 && d > 0) {
       updateSelectionSize(ids, mmToMeters(w), mmToMeters(d));
+    }
+    onClose();
+  }
+
+  function handleApplyHeight() {
+    const h = Number(heightMm);
+    if (h > 0) {
+      updateSelectionVerticalHeight(ids, h);
     }
     onClose();
   }
@@ -128,6 +138,23 @@ export function SelectionActionMenu({ ids, x, y, onClose }) {
                 <input type="number" min="1" value={depthMm} onChange={(e) => setDepthMm(e.target.value)} />
               </label>
               <button type="button" onClick={handleApplySize}>
+                적용
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="selection-action-menu__panel-toggle">
+          <button type="button" onClick={() => setOpenPanel(openPanel === 'height' ? null : 'height')}>
+            높이 변경하기
+          </button>
+          {openPanel === 'height' && (
+            <div className="selection-action-menu__size-panel">
+              <label>
+                높이(mm)
+                <input type="number" min="1" value={heightMm} onChange={(e) => setHeightMm(e.target.value)} />
+              </label>
+              <button type="button" onClick={handleApplyHeight}>
                 적용
               </button>
             </div>
