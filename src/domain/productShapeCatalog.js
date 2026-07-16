@@ -135,6 +135,10 @@ const KITCHEN = [
 ];
 
 const BATHROOM = [
+  // '소변기' contains the bare '변기' substring, so the more specific urinal
+  // entry must be checked before toilet's bare '변기' keyword (same reasoning
+  // as standing_ac/wall_mounted_ac above).
+  { id: 'urinal', archetype: 'urinal', keywords: ['소변기', 'urinal'] },
   { id: 'toilet', archetype: 'toilet', keywords: ['변기', 'toilet'] },
   { id: 'bathtub', archetype: 'bathtub', keywords: ['욕조', 'bathtub'] },
   { id: 'shower_stall', archetype: 'bathtub', keywords: ['샤워부스', 'shower stall', 'shower'] },

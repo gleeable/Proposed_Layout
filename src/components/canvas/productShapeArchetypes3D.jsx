@@ -451,6 +451,35 @@ export function ToiletShape3D({ width, depth, height, fill }) {
   );
 }
 
+// Wall-mounted back plate + a bowl that's wide at the rim and tapers to a
+// narrow drain, plus a flush valve near the top — reads as a urinal, not a
+// sink basin or toilet bowl.
+export function UrinalShape3D({ width, depth, height, fill }) {
+  const backPlateWidth = width * 0.9;
+  const backPlateHeight = height * 0.9;
+  const backPlateThickness = Math.max(depth * 0.12, 0.02);
+  const bowlTopRadius = Math.min(width, depth) * 0.4;
+  const bowlBottomRadius = bowlTopRadius * 0.35;
+  const bowlHeight = height * 0.55;
+  const valveRadius = Math.max(bowlTopRadius * 0.12, 0.01);
+  return (
+    <group>
+      <mesh position={[0, backPlateHeight / 2, -depth / 2 + backPlateThickness / 2]}>
+        <boxGeometry args={[backPlateWidth, backPlateHeight, backPlateThickness]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, height - bowlHeight / 2, depth * 0.08]}>
+        <cylinderGeometry args={[bowlTopRadius, bowlBottomRadius, bowlHeight, 16]} />
+        <meshStandardMaterial color={fill} />
+      </mesh>
+      <mesh position={[0, height * 0.85, -depth / 2 + backPlateThickness + valveRadius]}>
+        <sphereGeometry args={[valveRadius, 10, 8]} />
+        <meshStandardMaterial color="#9CA3AF" metalness={0.6} roughness={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
 // Outer shell + a recessed, deeper-toned interior cavity — reads as a
 // bathtub/shower basin.
 export function BathtubShape3D({ width, depth, height, fill }) {
@@ -993,6 +1022,7 @@ export const ARCHETYPE_COMPONENTS = {
   mirror_frame: MirrorFrameShape3D,
   sink_basin: SinkBasinShape3D,
   toilet: ToiletShape3D,
+  urinal: UrinalShape3D,
   bathtub: BathtubShape3D,
   monitor: MonitorShape3D,
   speaker: SpeakerShape3D,
