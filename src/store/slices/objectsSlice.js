@@ -70,8 +70,8 @@ export const createObjectsSlice = (set, get) => ({
     const template = getFacilityTemplate(category);
     if (!template) return;
     get().pushHistorySnapshot();
-    const { building, objects } = get();
-    const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
+    const { building, floors, objects } = get();
+    const footprint = floors?.find((f) => f.id === floorId)?.footprint ?? building?.footprint ?? { widthM: 10, depthM: 10 };
     const existingCount = objects.filter((o) => o.floorId === floorId).length;
     const { dx, dy } = placementOffset(existingCount);
 
@@ -101,8 +101,8 @@ export const createObjectsSlice = (set, get) => ({
 
   addGeneric: (floorId) => {
     get().pushHistorySnapshot();
-    const { building, objects } = get();
-    const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
+    const { building, floors, objects } = get();
+    const footprint = floors?.find((f) => f.id === floorId)?.footprint ?? building?.footprint ?? { widthM: 10, depthM: 10 };
     const existingCount = objects.filter((o) => o.floorId === floorId).length;
     const { dx, dy } = placementOffset(existingCount);
 
@@ -131,12 +131,12 @@ export const createObjectsSlice = (set, get) => ({
   },
 
   addCatalogProduct: (catalogItemId, floorId) => {
-    const { building, objects, catalogItems } = get();
+    const { building, floors, objects, catalogItems } = get();
     const catalogItem = catalogItems.find((item) => item.id === catalogItemId);
     if (!catalogItem) return null;
 
     get().pushHistorySnapshot();
-    const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
+    const footprint = floors?.find((f) => f.id === floorId)?.footprint ?? building?.footprint ?? { widthM: 10, depthM: 10 };
     const existingCount = objects.filter((o) => o.floorId === floorId).length;
     const { dx, dy } = placementOffset(existingCount);
 

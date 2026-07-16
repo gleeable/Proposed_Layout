@@ -7,13 +7,19 @@ const DEFAULT_FLOOR_HEIGHT_M = 3;
 export function LayoutEditBar() {
   const isEditingLayout = useAppStore((s) => s.isEditingLayout);
   const building = useAppStore((s) => s.building);
+  const floors = useAppStore((s) => s.floors);
+  const activeFloorId = useAppStore((s) => s.activeFloorId);
+  const selectedFloorIds = useAppStore((s) => s.selectedFloorIds);
   const resizeFootprint = useAppStore((s) => s.resizeFootprint);
   const setBuildingHeight = useAppStore((s) => s.setBuildingHeight);
   const toggleEditingLayout = useAppStore((s) => s.toggleEditingLayout);
 
-  const widthM = building?.footprint.widthM ?? 0;
-  const depthM = building?.footprint.depthM ?? 0;
+  const activeFloor = floors.find((f) => f.id === activeFloorId);
+  const footprint = activeFloor?.footprint ?? building?.footprint;
+  const widthM = footprint?.widthM ?? 0;
+  const depthM = footprint?.depthM ?? 0;
   const heightM = building?.heightM || (building?.floorCount || 1) * DEFAULT_FLOOR_HEIGHT_M;
+  const selectedCount = selectedFloorIds.length;
 
   const [form, setForm] = useState({ widthM, depthM, heightM });
 
@@ -49,6 +55,7 @@ export function LayoutEditBar() {
     <div className="layout-edit-bar">
       <span className="layout-edit-bar__hint">
         레이아웃 편집 모드 — 캔버스 모서리를 드래그하거나 값을 입력하세요 (F7로 종료)
+        {selectedCount > 1 ? ` — ${selectedCount}개 층에 동시 적용` : ''}
       </span>
       <label>
         가로(m)

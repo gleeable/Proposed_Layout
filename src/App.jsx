@@ -85,11 +85,12 @@ function App() {
 
     const { objects, floors, activeFloorId } = useAppStore.getState();
     const floorObjects = objects.filter((o) => o.floorId === activeFloorId);
-    const floorLabel = floors.find((f) => f.id === activeFloorId)?.label || '';
+    const activeFloor = floors.find((f) => f.id === activeFloorId);
+    const floorLabel = activeFloor?.label || '';
 
     await saveDesignAsPdf({
       imageDataUrl,
-      footprint: building.footprint,
+      footprint: activeFloor?.footprint ?? building.footprint,
       floorObjects,
       floorLabel,
       fileName: '공간배치-3d.pdf',

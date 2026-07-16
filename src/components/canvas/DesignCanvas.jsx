@@ -51,6 +51,7 @@ export function DesignCanvas() {
   const [contextMenu, setContextMenu] = useState(null);
 
   const building = useAppStore((s) => s.building);
+  const floors = useAppStore((s) => s.floors);
   const activeFloorId = useAppStore((s) => s.activeFloorId);
   const objects = useAppStore((s) => s.objects);
   const selectedIds = useAppStore((s) => s.selectedIds);
@@ -207,7 +208,10 @@ export function DesignCanvas() {
 
   // A safe fallback keeps every hook below unconditional (Rules of Hooks) even
   // before a building exists; the actual render bails out further down.
-  const footprint = building?.footprint ?? { widthM: 10, depthM: 10 };
+  // Each floor can have its own footprint (F7 edit mode) — fall back to the
+  // building's shared footprint for older saves that predate per-floor sizes.
+  const activeFloor = floors.find((f) => f.id === activeFloorId);
+  const footprint = activeFloor?.footprint ?? building?.footprint ?? { widthM: 10, depthM: 10 };
   const baseScale = computeFitScale(footprint, stageSize.width, stageSize.height);
   const scale = baseScale * viewport.zoom;
   const { offsetX: baseOffsetX, offsetY: baseOffsetY } = computeFootprintOffset(
@@ -295,13 +299,13 @@ export function DesignCanvas() {
         >
           <Layer>
             <FootprintOutline
-              footprint={building.footprint}
+              footprint={footprint}
               scale={scale}
               offsetX={offsetX}
               offsetY={offsetY}
             />
             <FootprintDimensions
-              footprint={building.footprint}
+              footprint={footprint}
               heightM={building.heightM}
               floorCount={building.floorCount}
               scale={scale}
@@ -310,7 +314,7 @@ export function DesignCanvas() {
             />
             {isEditingLayout && (
               <FootprintResizeHandles
-                footprint={building.footprint}
+                footprint={footprint}
                 scale={scale}
                 offsetX={offsetX}
                 offsetY={offsetY}

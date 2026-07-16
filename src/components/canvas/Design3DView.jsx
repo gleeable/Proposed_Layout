@@ -654,6 +654,7 @@ function Scene({
 
 export const Design3DView = forwardRef(function Design3DView(props, ref) {
   const building = useAppStore((s) => s.building);
+  const floors = useAppStore((s) => s.floors);
   const activeFloorId = useAppStore((s) => s.activeFloorId);
   const objects = useAppStore((s) => s.objects);
   const wallMaterialId = useAppStore((s) => s.wallMaterialId);
@@ -690,6 +691,13 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
   const floorObjects = useMemo(
     () => objects.filter((o) => o.floorId === activeFloorId),
     [objects, activeFloorId]
+  );
+
+  // Each floor can have its own footprint (F7 edit mode) — fall back to the
+  // building's shared footprint for older saves that predate per-floor sizes.
+  const activeFloorFootprint = useMemo(
+    () => floors.find((f) => f.id === activeFloorId)?.footprint ?? building?.footprint,
+    [floors, activeFloorId, building]
   );
 
   const floorHeightM = useMemo(() => {
@@ -788,7 +796,7 @@ export const Design3DView = forwardRef(function Design3DView(props, ref) {
       >
         <color attach="background" args={['#e5e7eb']} />
         <Scene
-          footprint={building.footprint}
+          footprint={activeFloorFootprint}
           floorObjects={floorObjects}
           floorHeightM={floorHeightM}
           keysHeldRef={keysHeldRef}

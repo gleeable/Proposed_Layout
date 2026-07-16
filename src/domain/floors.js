@@ -1,6 +1,6 @@
 import { createId } from './ids';
 
-export function generateFloors(floorCount) {
+export function generateFloors(floorCount, footprint) {
   const count = Math.max(1, Math.round(floorCount));
   const floors = [];
   for (let index = 1; index <= count; index += 1) {
@@ -8,6 +8,7 @@ export function generateFloors(floorCount) {
       id: createId(),
       index,
       label: `${index}F`,
+      footprint: footprint ? { ...footprint } : null,
     });
   }
   return floors;
